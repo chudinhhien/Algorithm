@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Allocator Design Demo</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-memory"></i> Memory Allocator Design</h1>
+            <p class="subtitle">Bài Tập Lớn Môn Hệ Điều Hành - Thiết kế và Demo Bộ Cấp Phát Bộ Nhớ</p>
+        </header>
+
+        <nav class="nav-tabs">
+            <button class="tab-button active" data-tab="overview">
+                <i class="fas fa-info-circle"></i> Tổng Quan
+            </button>
+            <button class="tab-button" data-tab="algorithms">
+                <i class="fas fa-cogs"></i> Thuật Toán
+            </button>
+            <button class="tab-button" data-tab="demo">
+                <i class="fas fa-play"></i> Demo Trực Tiếp
+            </button>
+            <button class="tab-button" data-tab="performance">
+                <i class="fas fa-chart-line"></i> Hiệu Suất
+            </button>
+            <button class="tab-button" data-tab="comparison">
+                <i class="fas fa-balance-scale"></i> So Sánh
+            </button>
+        </nav>
+
+        <main class="main-content">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <div class="card">
+                    <h2><i class="fas fa-bullseye"></i> Mục Tiêu Dự Án</h2>
+                    <div class="objectives">
+                        <div class="objective">
+                            <i class="fas fa-rocket"></i>
+                            <h3>Tốc độ (Speed)</h3>
+                            <p>Tối ưu hóa thời gian allocation và deallocation để đạt hiệu suất cao nhất</p>
+                        </div>
+                        <div class="objective">
+                            <i class="fas fa-puzzle-piece"></i>
+                            <h3>Phân mảnh (Fragmentation)</h3>
+                            <p>Giảm thiểu phân mảnh nội bộ và ngoại bộ để sử dụng bộ nhớ hiệu quả</p>
+                        </div>
+                        <div class="objective">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                            <h3>Khả năng mở rộng (Scalability)</h3>
+                            <p>Thiết kế allocator có thể hoạt động tốt với nhiều luồng và kích thước lớn</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2><i class="fas fa-list"></i> Các Thuật Toán Triển Khai</h2>
+                    <div class="algorithm-grid">
+                        <div class="algorithm-card">
+                            <h3><i class="fas fa-sitemap"></i> Buddy System</h3>
+                            <p>Chia bộ nhớ thành các khối lũy thừa của 2, hỗ trợ coalescing hiệu quả</p>
+                            <div class="features">
+                                <span class="feature">✓ Giảm fragmentation ngoại bộ</span>
+                                <span class="feature">✓ Coalescing tự động</span>
+                                <span class="feature">✓ Quản lý theo cây nhị phân</span>
+                            </div>
+                        </div>
+                        <div class="algorithm-card">
+                            <h3><i class="fas fa-layer-group"></i> Slab Allocator</h3>
+                            <p>Tối ưu cho các object có kích thước cố định, cache-friendly</p>
+                            <div class="features">
+                                <span class="feature">✓ Allocation O(1)</span>
+                                <span class="feature">✓ Giảm fragmentation nội bộ</span>
+                                <span class="feature">✓ Cache locality tốt</span>
+                            </div>
+                        </div>
+                        <div class="algorithm-card">
+                            <h3><i class="fas fa-swimming-pool"></i> Memory Pool</h3>
+                            <p>Pre-allocation các chunk lớn, predictable memory usage</p>
+                            <div class="features">
+                                <span class="feature">✓ Allocation/deallocation nhanh</span>
+                                <span class="feature">✓ Memory usage dự đoán được</span>
+                                <span class="feature">✓ Bulk operations</span>
+                            </div>
+                        </div>
+                        <div class="algorithm-card hybrid">
+                            <h3><i class="fas fa-magic"></i> Hybrid Allocator</h3>
+                            <p>Kết hợp ưu điểm của nhiều thuật toán, adaptive selection</p>
+                            <div class="features">
+                                <span class="feature">✓ Tự động chọn thuật toán</span>
+                                <span class="feature">✓ Pattern learning</span>
+                                <span class="feature">✓ Performance optimization</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Algorithms Tab -->
+            <div id="algorithms" class="tab-content">
+                <div class="card">
+                    <h2><i class="fas fa-code"></i> Chi Tiết Thuật Toán</h2>
+                    <div class="algorithm-selector">
+                        <select id="algorithmSelect">
+                            <option value="buddy">Buddy System Allocator</option>
+                            <option value="slab">Slab Allocator</option>
+                            <option value="pool">Memory Pool Allocator</option>
+                            <option value="hybrid">Hybrid Allocator</option>
+                        </select>
+                    </div>
+                    
+                    <div id="algorithmDetails" class="algorithm-details">
+                        <!-- Content will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Demo Tab -->
+            <div id="demo" class="tab-content">
+                <div class="card">
+                    <h2><i class="fas fa-play"></i> Demo Trực Tiếp</h2>
+                    <div class="demo-controls">
+                        <div class="control-group">
+                            <label for="allocatorType">Chọn Allocator:</label>
+                            <select id="allocatorType">
+                                <option value="buddy">Buddy System</option>
+                                <option value="slab">Slab Allocator</option>
+                                <option value="pool">Memory Pool</option>
+                                <option value="hybrid">Hybrid</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="memorySize">Kích thước bộ nhớ (bytes):</label>
+                            <input type="number" id="memorySize" value="1024" min="64" max="1048576">
+                        </div>
+
+                        <button id="initAllocator" class="btn btn-primary">
+                            <i class="fas fa-power-off"></i> Khởi tạo Allocator
+                        </button>
+                    </div>
+
+                    <div class="allocation-controls">
+                        <div class="control-group">
+                            <label for="allocSize">Kích thước allocation (bytes):</label>
+                            <input type="number" id="allocSize" value="64" min="1" max="4096">
+                        </div>                        <div class="control-buttons">
+                            <button id="allocateBtn" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Allocate
+                            </button>
+                            <button id="deallocateBtn" class="btn btn-danger">
+                                <i class="fas fa-minus"></i> Deallocate Last
+                            </button>
+                            <button id="defragmentBtn" class="btn btn-warning">
+                                <i class="fas fa-compress"></i> Defragment
+                            </button>
+                            <button id="resetBtn" class="btn btn-secondary">
+                                <i class="fas fa-refresh"></i> Reset
+                            </button>                            <button id="testVisualizationBtn" class="btn btn-info">
+                                <i class="fas fa-test-tube"></i> Test Visualization
+                            </button>
+                            <button id="testAlgorithmVisualizationBtn" class="btn btn-info">
+                                <i class="fas fa-brain"></i> Test Algorithm Viz
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="memory-visualization">
+                        <h3><i class="fas fa-eye"></i> Trực quan hóa Bộ nhớ</h3>
+                        <div id="memoryCanvas" class="memory-canvas">
+                            <!-- Memory blocks will be rendered here -->
+                        </div>
+                        <div class="memory-legend">
+                            <div class="legend-item">
+                                <div class="legend-color allocated"></div>
+                                <span>Allocated</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color free"></div>
+                                <span>Free</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color fragmented"></div>
+                                <span>Fragmented</span>
+                            </div>                        </div>
+                    </div>
+
+                    <!-- Algorithm-Specific Visualization Container -->
+                    <div class="algorithm-specific-visualization">
+                        <h3><i class="fas fa-cogs"></i> Algorithm-Specific Visualization</h3>
+                        <div id="algorithmSpecificViz" class="algorithm-specific-viz">
+                            <!-- Algorithm-specific visualizations will be rendered here -->
+                        </div>
+                    </div>
+
+                    <div class="memory-stats">
+                        <h3><i class="fas fa-chart-bar"></i> Thống kê Real-time</h3>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-value" id="totalAllocated">0</div>
+                                <div class="stat-label">Total Allocated (bytes)</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="totalFree">1024</div>
+                                <div class="stat-label">Available (bytes)</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="fragmentationRatio">0%</div>
+                                <div class="stat-label">Fragmentation</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="allocCount">0</div>
+                                <div class="stat-label">Allocations</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="avgAllocTime">0</div>
+                                <div class="stat-label">Avg Alloc Time (μs)</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="peakUsage">0</div>
+                                <div class="stat-label">Peak Usage (bytes)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Tab -->
+            <div id="performance" class="tab-content">
+                <div class="card">
+                    <h2><i class="fas fa-chart-line"></i> Phân tích Hiệu suất</h2>
+                    
+                    <div class="benchmark-container">
+                        <h3><i class="fas fa-stopwatch"></i> Benchmark Tự động</h3>
+                        
+                        <div class="benchmark-controls">
+                            <label>
+                                Memory Size (bytes):
+                                <input type="number" id="benchmarkMemorySize" value="8192" min="1024" max="65536" step="1024">
+                            </label>
+                            
+                            <label>
+                                Test Count:
+                                <input type="number" id="benchmarkTestCount" value="1000" min="100" max="10000" step="100">
+                            </label>
+                            
+                            <button id="startBenchmark" class="benchmark-btn">
+                                <i class="fas fa-play"></i> Start Benchmark
+                            </button>
+                            
+                            <button id="exportResults" class="benchmark-btn">
+                                <i class="fas fa-download"></i> Export Results
+                            </button>
+                        </div>
+                        
+                        <div class="benchmark-progress">
+                            <div class="benchmark-loading">
+                                <div class="loading-spinner"></div>
+                                <p>Running comprehensive benchmark tests...</p>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="benchmarkProgress"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="benchmark-summary">
+                            <h3><i class="fas fa-trophy"></i> Best Performers</h3>
+                            <div id="benchmarkSummary">
+                                <p>Run a benchmark to see results here...</p>
+                            </div>
+                        </div>
+                        
+                        <div id="benchmarkResults">
+                            <!-- Benchmark charts will be rendered here -->
+                        </div>
+                        
+                        <div class="benchmark-export">
+                            <p><i class="fas fa-info-circle"></i> Export results as JSON for further analysis</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Real-time Performance Monitor -->
+                    <div class="performance-monitor">
+                        <h3><i class="fas fa-heartbeat"></i> Real-time Performance Monitor</h3>
+                        
+                        <div class="monitor-grid">
+                            <div class="monitor-card">
+                                <div class="monitor-icon"><i class="fas fa-clock"></i></div>
+                                <div class="monitor-value" id="realtimeAllocTime">0ms</div>
+                                <div class="monitor-label">Last Allocation Time</div>
+                            </div>
+                            
+                            <div class="monitor-card">
+                                <div class="monitor-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                <div class="monitor-value" id="realtimeThroughput">0 ops/s</div>
+                                <div class="monitor-label">Current Throughput</div>
+                            </div>
+                            
+                            <div class="monitor-card">
+                                <div class="monitor-icon"><i class="fas fa-memory"></i></div>
+                                <div class="monitor-value" id="realtimeFragmentation">0%</div>
+                                <div class="monitor-label">Fragmentation Ratio</div>
+                            </div>
+                            
+                            <div class="monitor-card">
+                                <div class="monitor-icon"><i class="fas fa-chart-area"></i></div>
+                                <div class="monitor-value" id="realtimeUsage">0%</div>
+                                <div class="monitor-label">Memory Usage</div>
+                            </div>
+                        </div>
+                        
+                        <div class="performance-timeline">
+                            <canvas id="performanceTimeline" width="800" height="300"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed Performance Metrics -->
+                    <div class="detailed-metrics">
+                        <h3><i class="fas fa-microscope"></i> Chi tiết Performance</h3>
+                        
+                        <div class="metrics-tabs">
+                            <button class="metric-tab active" data-metric="allocation">Allocation Analysis</button>
+                            <button class="metric-tab" data-metric="fragmentation">Fragmentation Analysis</button>
+                            <button class="metric-tab" data-metric="memory">Memory Usage Pattern</button>
+                            <button class="metric-tab" data-metric="algorithm">Algorithm Efficiency</button>
+                        </div>
+                        
+                        <div class="metric-content">
+                            <div id="allocationMetrics" class="metric-panel active">
+                                <canvas id="allocationChart" width="600" height="300"></canvas>
+                                <div class="metric-insights">
+                                    <h4>Allocation Insights:</h4>
+                                    <ul id="allocationInsights">
+                                        <li>Click "Start Benchmark" to generate insights</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div id="fragmentationMetrics" class="metric-panel">
+                                <canvas id="fragmentationChart" width="600" height="300"></canvas>
+                                <div class="metric-insights">
+                                    <h4>Fragmentation Insights:</h4>
+                                    <ul id="fragmentationInsights">
+                                        <li>Run benchmark to see fragmentation analysis</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div id="memoryMetrics" class="metric-panel">
+                                <canvas id="memoryChart" width="600" height="300"></canvas>
+                                <div class="metric-insights">
+                                    <h4>Memory Usage Insights:</h4>
+                                    <ul id="memoryInsights">
+                                        <li>Analyze memory patterns after benchmarking</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div id="algorithmMetrics" class="metric-panel">
+                                <canvas id="algorithmChart" width="600" height="300"></canvas>
+                                <div class="metric-insights">
+                                    <h4>Algorithm Efficiency:</h4>
+                                    <ul id="algorithmInsights">
+                                        <li>Compare algorithm performance after testing</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison Tab -->
+            <div id="comparison" class="tab-content">
+                <div class="card">
+                    <h2><i class="fas fa-balance-scale"></i> So sánh Thuật toán</h2>
+                    
+                    <div class="comparison-matrix">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Tiêu chí</th>
+                                    <th>Buddy System</th>
+                                    <th>Slab Allocator</th>
+                                    <th>Memory Pool</th>
+                                    <th>Hybrid</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Tốc độ Allocation</strong></td>
+                                    <td class="rating-good">O(log n)</td>
+                                    <td class="rating-excellent">O(1)</td>
+                                    <td class="rating-excellent">O(1)</td>
+                                    <td class="rating-excellent">O(1) - Adaptive</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fragmentation Ngoại bộ</strong></td>
+                                    <td class="rating-excellent">Rất thấp</td>
+                                    <td class="rating-good">Thấp</td>
+                                    <td class="rating-fair">Trung bình</td>
+                                    <td class="rating-excellent">Rất thấp</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fragmentation Nội bộ</strong></td>
+                                    <td class="rating-fair">Có thể cao</td>
+                                    <td class="rating-excellent">Rất thấp</td>
+                                    <td class="rating-good">Thấp</td>
+                                    <td class="rating-excellent">Rất thấp</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Memory Overhead</strong></td>
+                                    <td class="rating-good">Thấp</td>
+                                    <td class="rating-fair">Trung bình</td>
+                                    <td class="rating-good">Thấp</td>
+                                    <td class="rating-fair">Trung bình</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Scalability</strong></td>
+                                    <td class="rating-good">Tốt</td>
+                                    <td class="rating-excellent">Rất tốt</td>
+                                    <td class="rating-good">Tốt</td>
+                                    <td class="rating-excellent">Rất tốt</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Phù hợp cho</strong></td>
+                                    <td>General purpose</td>
+                                    <td>Fixed-size objects</td>
+                                    <td>Predictable patterns</td>
+                                    <td>All scenarios</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="use-cases">
+                        <h3><i class="fas fa-lightbulb"></i> Khuyến nghị Sử dụng</h3>
+                        <div class="use-case-grid">
+                            <div class="use-case">
+                                <h4>Buddy System</h4>
+                                <ul>
+                                    <li>Kernel memory management</li>
+                                    <li>General-purpose allocators</li>
+                                    <li>Systems requiring coalescing</li>
+                                </ul>
+                            </div>
+                            <div class="use-case">
+                                <h4>Slab Allocator</h4>
+                                <ul>
+                                    <li>Object caching (Linux kernel)</li>
+                                    <li>Fixed-size allocations</li>
+                                    <li>High-frequency allocations</li>
+                                </ul>
+                            </div>
+                            <div class="use-case">
+                                <h4>Memory Pool</h4>
+                                <ul>
+                                    <li>Real-time systems</li>
+                                    <li>Embedded systems</li>
+                                    <li>Predictable memory patterns</li>
+                                </ul>
+                            </div>
+                            <div class="use-case">
+                                <h4>Hybrid</h4>
+                                <ul>
+                                    <li>Production applications</li>
+                                    <li>Mixed allocation patterns</li>
+                                    <li>Performance-critical systems</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2025 Memory Allocator Design Project - Bài Tập Lớn Hệ Điều Hành</p>
+            <p>Developed with <i class="fas fa-heart" style="color: #e74c3c;"></i> for educational purposes</p>
+        </footer>
+    </div>    <script src="js/benchmark.js"></script>
+    <script src="js/allocator-demo.js"></script>
+    <script src="js/visualization.js"></script>
+</body>
+</html>

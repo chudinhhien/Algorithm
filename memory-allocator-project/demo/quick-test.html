@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Visualization Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .memory-canvas { width: 100%; min-height: 400px; border: 2px solid #333; padding: 20px; }
+        .buddy-container, .pool-container { 
+            margin: 20px 0; 
+            padding: 20px; 
+            border: 3px solid #ff5722;
+            background: #ffebee;
+            min-height: 200px;
+        }
+        .buddy-node { 
+            display: inline-block; 
+            margin: 5px; 
+            padding: 10px; 
+            border: 1px solid #333; 
+            border-radius: 4px;
+            background: #e3f2fd;
+        }
+        .pool-chunk { 
+            display: inline-block; 
+            width: 60px; 
+            height: 100px; 
+            margin: 5px; 
+            border: 1px solid #333; 
+            border-radius: 4px;
+            background: #fff3e0;
+            text-align: center;
+            padding: 5px;
+        }
+        .pool-chunk-used { 
+            background: #ff5722; 
+            height: 50%; 
+            width: 100%; 
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quick Visualization Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button onclick="testBuddyViz()">Test Buddy Visualization</button>
+        <button onclick="testPoolViz()">Test Pool Visualization</button>
+        <button onclick="clearCanvas()">Clear</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Memory Canvas</h2>
+        <div id="memoryCanvas" class="memory-canvas">
+            <p>Click buttons above to test visualizations</p>
+        </div>
+    </div>
+
+    <script>
+        function testBuddyViz() {
+            const canvas = document.getElementById('memoryCanvas');
+            canvas.innerHTML = `
+                <div class="buddy-container">
+                    <h4>Buddy System Tree Structure</h4>
+                    <div class="buddy-tree">
+                        <div class="buddy-level">
+                            <div class="buddy-node">1024B Root</div>
+                        </div>
+                        <div class="buddy-level">
+                            <div class="buddy-node">512B Left</div>
+                            <div class="buddy-node">512B Right</div>
+                        </div>
+                        <div class="buddy-level">
+                            <div class="buddy-node">256B</div>
+                            <div class="buddy-node">256B</div>
+                            <div class="buddy-node">256B</div>
+                            <div class="buddy-node">256B</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            console.log('Buddy visualization test completed');
+        }
+
+        function testPoolViz() {
+            const canvas = document.getElementById('memoryCanvas');
+            canvas.innerHTML = `
+                <div class="pool-container">
+                    <h4>Memory Pool Chunks</h4>
+                    <div class="pool-chunks" style="display: flex; gap: 10px; align-items: flex-end;">
+                        <div class="pool-chunk">
+                            <div>Chunk 1</div>
+                            <div class="pool-chunk-used" style="height: 80%;"></div>
+                            <div>80%</div>
+                        </div>
+                        <div class="pool-chunk">
+                            <div>Chunk 2</div>
+                            <div class="pool-chunk-used" style="height: 60%;"></div>
+                            <div>60%</div>
+                        </div>
+                        <div class="pool-chunk">
+                            <div>Chunk 3</div>
+                            <div class="pool-chunk-used" style="height: 30%;"></div>
+                            <div>30%</div>
+                        </div>
+                        <div class="pool-chunk">
+                            <div>Chunk 4</div>
+                            <div class="pool-chunk-used" style="height: 90%;"></div>
+                            <div>90%</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            console.log('Pool visualization test completed');
+        }
+
+        function clearCanvas() {
+            document.getElementById('memoryCanvas').innerHTML = '<p>Canvas cleared</p>';
+        }
+
+        console.log('Quick test page loaded. Use buttons to test visualizations.');
+    </script>
+</body>
+</html>

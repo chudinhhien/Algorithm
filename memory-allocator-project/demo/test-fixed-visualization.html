@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Fixed Buddy & Pool Visualization</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .test-controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button.active {
+            background: #28a745;
+        }
+        #memoryCanvas {
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            min-height: 500px;
+            background: white;
+            padding: 20px;
+        }
+        .console-output {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #e2e3e5; color: #383d41; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Test Fixed Buddy & Pool Visualization</h1>
+        
+        <div class="test-controls">
+            <h3>Test Controls</h3>
+            <p>Nhấn các nút bên dưới để test visualization đã sửa:</p>
+            
+            <button class="test-button" onclick="testBuddySystem()">
+                <i class="fas fa-sitemap"></i> Test Buddy System
+            </button>
+            <button class="test-button" onclick="testMemoryPool()">
+                <i class="fas fa-cubes"></i> Test Memory Pool
+            </button>
+            <button class="test-button" onclick="testSlabAllocator()">
+                <i class="fas fa-database"></i> Test Slab (Reference)
+            </button>
+            <button class="test-button" onclick="testHybridAllocator()">
+                <i class="fas fa-brain"></i> Test Hybrid
+            </button>
+            <button class="test-button" onclick="clearAll()">
+                <i class="fas fa-trash"></i> Clear
+            </button>
+        </div>
+
+        <div class="status info">
+            <strong>Vấn đề đang sửa:</strong> Phần trực quan hóa algorithm-specific (Buddy Tree, Pool Chunks) không hiển thị bên dưới linear memory layout.
+        </div>
+
+        <div id="testResults"></div>
+
+        <div id="memoryCanvas" class="memory-canvas">
+            <div style="text-align: center; color: #666; margin: 50px 0;">
+                <i class="fas fa-play-circle" style="font-size: 48px;"></i>
+                <p>Nhấn một nút test để bắt đầu...</p>
+            </div>
+        </div>
+
+        <div class="console-output" id="consoleOutput">
+            <strong>Console Output:</strong><br>
+            Sẽ hiển thị debug logs ở đây...
+        </div>
+    </div>
+
+    <script src="js/allocator-demo.js"></script>
+    <script>
+        let testDemo = null;
+        let originalLog = console.log;
+        let originalError = console.error;
+        let originalWarn = console.warn;
+        
+        // Intercept console output
+        function setupConsoleLogging() {
+            const consoleDiv = document.getElementById('consoleOutput');
+            
+            console.log = function(...args) {
+                originalLog.apply(console, args);
+                consoleDiv.innerHTML += '<div style="color: #4299e1;">[LOG] ' + args.join(' ') + '</div>';
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            };
+            
+            console.error = function(...args) {
+                originalError.apply(console, args);
+                consoleDiv.innerHTML += '<div style="color: #f56565;">[ERROR] ' + args.join(' ') + '</div>';
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            };
+            
+            console.warn = function(...args) {
+                originalWarn.apply(console, args);
+                consoleDiv.innerHTML += '<div style="color: #ed8936;">[WARN] ' + args.join(' ') + '</div>';
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            };
+        }
+        
+        function initializeTestDemo() {
+            try {
+                if (!testDemo) {
+                    testDemo = new MemoryAllocatorDemo();
+                    testDemo.memorySize = 2048;
+                    testDemo.allocations = [
+                        { address: '0x0', size: 256 },
+                        { address: '0x200', size: 128 },
+                        { address: '0x400', size: 512 }
+                    ];
+                    testDemo.stats = {
+                        totalAllocated: 896,
+                        totalFree: 1152,
+                        fragmentationRatio: 0.15
+                    };
+                    console.log('Test demo initialized successfully');
+                }
+                return true;
+            } catch (error) {
+                console.error('Failed to initialize test demo:', error);
+                return false;
+            }
+        }
+        
+        function addTestResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('testResults');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            resultsDiv.appendChild(div);
+            
+            // Keep only last 5 results
+            while (resultsDiv.children.length > 5) {
+                resultsDiv.removeChild(resultsDiv.firstChild);
+            }
+        }
+        
+        function clearAll() {
+            document.getElementById('memoryCanvas').innerHTML = `
+                <div style="text-align: center; color: #666; margin: 50px 0;">
+                    <i class="fas fa-broom" style="font-size: 48px;"></i>
+                    <p>Đã xóa sạch. Nhấn nút test để bắt đầu lại.</p>
+                </div>
+            `;
+            document.getElementById('testResults').innerHTML = '';
+            document.getElementById('consoleOutput').innerHTML = '<strong>Console Output:</strong><br>';
+            
+            // Reset active buttons
+            document.querySelectorAll('.test-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+        
+        function testBuddySystem() {
+            console.log('=== TESTING BUDDY SYSTEM VISUALIZATION ===');
+            addTestResult('Đang test Buddy System...', 'info');
+            
+            if (!initializeTestDemo()) {
+                addTestResult('Không thể khởi tạo test demo', 'error');
+                return;
+            }
+            
+            // Highlight active button
+            document.querySelectorAll('.test-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            try {
+                testDemo.allocatorType = 'buddy';
+                console.log('Set allocator type to buddy');
+                
+                const testLayout = {
+                    algorithm: 'buddy',
+                    totalSize: 2048,
+                    freeSize: 1152,
+                    usedSize: 896,
+                    blocks: [
+                        { address: 0, size: 256, type: 'allocated' },
+                        { address: 256, size: 256, type: 'free' },
+                        { address: 512, size: 512, type: 'allocated' },
+                        { address: 1024, size: 1024, type: 'free' }
+                    ]
+                };
+                
+                console.log('Calling renderAlgorithmSpecificVisualization with layout:', testLayout);
+                testDemo.renderAlgorithmSpecificVisualization(testLayout);
+                
+                // Check if buddy elements are present
+                setTimeout(() => {
+                    const buddyContainer = document.querySelector('.buddy-container');
+                    const buddyTree = document.querySelector('.buddy-tree');
+                    
+                    if (buddyContainer && buddyTree) {
+                        addTestResult('✅ Buddy System visualization hiển thị thành công!', 'success');
+                        console.log('Buddy visualization verification: SUCCESS');
+                    } else {
+                        addTestResult('❌ Buddy System visualization vẫn không hiển thị', 'error');
+                        console.error('Buddy visualization verification: FAILED');
+                    }
+                }, 500);
+                
+            } catch (error) {
+                addTestResult(`❌ Lỗi trong Buddy System test: ${error.message}`, 'error');
+                console.error('Buddy System test error:', error);
+            }
+        }
+        
+        function testMemoryPool() {
+            console.log('=== TESTING MEMORY POOL VISUALIZATION ===');
+            addTestResult('Đang test Memory Pool...', 'info');
+            
+            if (!initializeTestDemo()) {
+                addTestResult('Không thể khởi tạo test demo', 'error');
+                return;
+            }
+            
+            // Highlight active button
+            document.querySelectorAll('.test-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            try {
+                testDemo.allocatorType = 'pool';
+                console.log('Set allocator type to pool');
+                
+                const testLayout = {
+                    algorithm: 'pool',
+                    totalSize: 2048,
+                    freeSize: 1152,
+                    usedSize: 896,
+                    blocks: [
+                        { address: 0, size: 256, type: 'allocated', pool: 'pool-256' },
+                        { address: 256, size: 256, type: 'free', pool: 'pool-256' },
+                        { address: 512, size: 512, type: 'allocated', pool: 'pool-512' },
+                        { address: 1024, size: 1024, type: 'free', pool: 'pool-1024' }
+                    ]
+                };
+                
+                console.log('Calling renderAlgorithmSpecificVisualization with layout:', testLayout);
+                testDemo.renderAlgorithmSpecificVisualization(testLayout);
+                
+                // Check if pool elements are present
+                setTimeout(() => {
+                    const poolContainer = document.querySelector('.pool-container');
+                    const poolChunks = document.querySelector('.pool-chunks');
+                    
+                    if (poolContainer && poolChunks) {
+                        addTestResult('✅ Memory Pool visualization hiển thị thành công!', 'success');
+                        console.log('Pool visualization verification: SUCCESS');
+                    } else {
+                        addTestResult('❌ Memory Pool visualization vẫn không hiển thị', 'error');
+                        console.error('Pool visualization verification: FAILED');
+                    }
+                }, 500);
+                
+            } catch (error) {
+                addTestResult(`❌ Lỗi trong Memory Pool test: ${error.message}`, 'error');
+                console.error('Memory Pool test error:', error);
+            }
+        }
+        
+        function testSlabAllocator() {
+            console.log('=== TESTING SLAB ALLOCATOR VISUALIZATION ===');
+            addTestResult('Đang test Slab Allocator (reference)...', 'info');
+            
+            if (!initializeTestDemo()) return;
+            
+            document.querySelectorAll('.test-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            testDemo.allocatorType = 'slab';
+            const testLayout = {
+                algorithm: 'slab',
+                totalSize: 2048,
+                blocks: [
+                    { address: 0, size: 64, type: 'allocated', cache: 'kmalloc-64' }
+                ]
+            };
+            
+            testDemo.renderAlgorithmSpecificVisualization(testLayout);
+            addTestResult('✅ Slab Allocator test completed', 'success');
+        }
+        
+        function testHybridAllocator() {
+            console.log('=== TESTING HYBRID ALLOCATOR VISUALIZATION ===');
+            addTestResult('Đang test Hybrid Allocator...', 'info');
+            
+            if (!initializeTestDemo()) return;
+            
+            document.querySelectorAll('.test-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            testDemo.allocatorType = 'hybrid';
+            const testLayout = {
+                algorithm: 'hybrid',
+                totalSize: 2048,
+                blocks: [
+                    { address: 0, size: 128, type: 'allocated', strategy: 'slab' }
+                ]
+            };
+            
+            testDemo.renderAlgorithmSpecificVisualization(testLayout);
+            addTestResult('✅ Hybrid Allocator test completed', 'success');
+        }
+        
+        // Initialize
+        window.addEventListener('load', function() {
+            setupConsoleLogging();
+            console.log('Test page loaded and console logging setup completed');
+            addTestResult('Trang test đã sẵn sàng. Nhấn các nút để test visualization.', 'info');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Integration Test - Memory Allocator Visualizations</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #007acc;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .test-button {
+            margin: 10px;
+            padding: 10px 20px;
+            background: #007acc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #005a9e;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Final Integration Test - Memory Allocator Visualizations</h1>
+        
+        <div class="test-section">
+            <h2>Visualization Container Status</h2>
+            <div id="containerStatus" class="status info">Checking containers...</div>
+            <button class="test-button" onclick="checkContainers()">Check Containers</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Algorithm Visualization Tests</h2>
+            <div id="testStatus" class="status info">Ready to test</div>
+            <button class="test-button" onclick="testBuddySystem()">Test Buddy System</button>
+            <button class="test-button" onclick="testMemoryPool()">Test Memory Pool</button>
+            <button class="test-button" onclick="testSlabAllocator()">Test Slab Allocator</button>
+            <button class="test-button" onclick="testHybridAllocator()">Test Hybrid Allocator</button>
+            <button class="test-button" onclick="testAllAlgorithms()">Test All Algorithms</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Memory Layout Visualization</h2>
+            <div id="memoryViz" class="memory-visualization">
+                <!-- Memory blocks will be rendered here -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Algorithm-Specific Visualization</h2>
+            <div id="algorithmSpecificViz" class="algorithm-specific-viz">
+                <!-- Algorithm-specific visualizations will be rendered here -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Results Log</h2>
+            <div id="testLog" style="background: #f1f1f1; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto;">
+            </div>
+            <button class="test-button" onclick="clearLog()">Clear Log</button>
+        </div>
+    </div>
+
+    <script src="js/allocator-demo.js"></script>
+    <script>
+        let testLog = document.getElementById('testLog');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            testLog.textContent += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            testLog.scrollTop = testLog.scrollHeight;
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+
+        function clearLog() {
+            testLog.textContent = '';
+        }
+
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.className = `status ${type}`;
+            element.textContent = message;
+        }
+
+        function checkContainers() {
+            log('Checking visualization containers...');
+            
+            const memoryViz = document.getElementById('memoryViz');
+            const algorithmViz = document.getElementById('algorithmSpecificViz');
+            
+            let status = 'success';
+            let message = 'All containers found: ';
+            
+            if (!memoryViz) {
+                status = 'error';
+                message = 'ERROR: memoryViz container not found!';
+                log(message, 'error');
+            } else {
+                log('✓ memoryViz container found');
+                message += 'memoryViz ✓';
+            }
+            
+            if (!algorithmViz) {
+                status = 'error';
+                message += (status === 'error' ? ', ' : '') + 'ERROR: algorithmSpecificViz container not found!';
+                log('✗ algorithmSpecificViz container not found', 'error');
+            } else {
+                log('✓ algorithmSpecificViz container found');
+                message += ', algorithmSpecificViz ✓';
+            }
+            
+            updateStatus('containerStatus', message, status);
+            
+            // Check if allocator demo is loaded
+            if (typeof MemoryAllocatorDemo !== 'undefined') {
+                log('✓ MemoryAllocatorDemo class is available');
+            } else {
+                log('✗ MemoryAllocatorDemo class not found', 'error');
+                status = 'error';
+            }
+            
+            return status === 'success';
+        }
+
+        function testBuddySystem() {
+            log('Testing Buddy System visualization...');
+            updateStatus('testStatus', 'Testing Buddy System...', 'info');
+            
+            try {
+                // Create test data for Buddy System
+                const testData = {
+                    algorithm: 'buddy',
+                    totalSize: 1024,
+                    allocations: [
+                        { id: 1, size: 64, address: 0 },
+                        { id: 2, size: 128, address: 64 },
+                        { id: 3, size: 32, address: 192 }
+                    ],
+                    buddyTree: {
+                        size: 1024,
+                        level: 0,
+                        allocated: false,
+                        left: {
+                            size: 512,
+                            level: 1,
+                            allocated: true,
+                            left: null,
+                            right: null
+                        },
+                        right: {
+                            size: 512,
+                            level: 1,
+                            allocated: false,
+                            left: null,
+                            right: null
+                        }
+                    }
+                };
+
+                // Test using global test function
+                if (typeof window.testAlgorithm === 'function') {
+                    window.testAlgorithm('buddy', testData);
+                    log('✓ Buddy System visualization test completed');
+                    updateStatus('testStatus', 'Buddy System test completed ✓', 'success');
+                } else {
+                    throw new Error('testAlgorithm function not available');
+                }
+            } catch (error) {
+                log(`✗ Buddy System test failed: ${error.message}`, 'error');
+                updateStatus('testStatus', 'Buddy System test failed ✗', 'error');
+            }
+        }
+
+        function testMemoryPool() {
+            log('Testing Memory Pool visualization...');
+            updateStatus('testStatus', 'Testing Memory Pool...', 'info');
+            
+            try {
+                const testData = {
+                    algorithm: 'pool',
+                    totalSize: 1024,
+                    allocations: [
+                        { id: 1, size: 32, address: 0 },
+                        { id: 2, size: 32, address: 32 },
+                        { id: 3, size: 64, address: 64 }
+                    ],
+                    pools: [
+                        { 
+                            size: 32, 
+                            count: 16, 
+                            used: 2, 
+                            address: 0,
+                            chunks: [
+                                { allocated: true, id: 1 },
+                                { allocated: true, id: 2 },
+                                { allocated: false, id: null }
+                            ]
+                        },
+                        { 
+                            size: 64, 
+                            count: 8, 
+                            used: 1, 
+                            address: 512,
+                            chunks: [
+                                { allocated: true, id: 3 },
+                                { allocated: false, id: null }
+                            ]
+                        }
+                    ]
+                };
+
+                if (typeof window.testAlgorithm === 'function') {
+                    window.testAlgorithm('pool', testData);
+                    log('✓ Memory Pool visualization test completed');
+                    updateStatus('testStatus', 'Memory Pool test completed ✓', 'success');
+                } else {
+                    throw new Error('testAlgorithm function not available');
+                }
+            } catch (error) {
+                log(`✗ Memory Pool test failed: ${error.message}`, 'error');
+                updateStatus('testStatus', 'Memory Pool test failed ✗', 'error');
+            }
+        }
+
+        function testSlabAllocator() {
+            log('Testing Slab Allocator visualization...');
+            updateStatus('testStatus', 'Testing Slab Allocator...', 'info');
+            
+            try {
+                const testData = {
+                    algorithm: 'slab',
+                    totalSize: 1024,
+                    allocations: [
+                        { id: 1, size: 64, address: 0, type: 'TaskStruct' },
+                        { id: 2, size: 64, address: 64, type: 'TaskStruct' },
+                        { id: 3, size: 128, address: 256, type: 'FileDescriptor' }
+                    ],
+                    caches: [
+                        {
+                            name: 'TaskStruct',
+                            objectSize: 64,
+                            slabs: [
+                                {
+                                    objects: [
+                                        { allocated: true, id: 1 },
+                                        { allocated: true, id: 2 },
+                                        { allocated: false, id: null },
+                                        { allocated: false, id: null }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            name: 'FileDescriptor',
+                            objectSize: 128,
+                            slabs: [
+                                {
+                                    objects: [
+                                        { allocated: true, id: 3 },
+                                        { allocated: false, id: null }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                };
+
+                if (typeof window.testAlgorithm === 'function') {
+                    window.testAlgorithm('slab', testData);
+                    log('✓ Slab Allocator visualization test completed');
+                    updateStatus('testStatus', 'Slab Allocator test completed ✓', 'success');
+                } else {
+                    throw new Error('testAlgorithm function not available');
+                }
+            } catch (error) {
+                log(`✗ Slab Allocator test failed: ${error.message}`, 'error');
+                updateStatus('testStatus', 'Slab Allocator test failed ✗', 'error');
+            }
+        }
+
+        function testHybridAllocator() {
+            log('Testing Hybrid Allocator visualization...');
+            updateStatus('testStatus', 'Testing Hybrid Allocator...', 'info');
+            
+            try {
+                const testData = {
+                    algorithm: 'hybrid',
+                    totalSize: 1024,
+                    allocations: [
+                        { id: 1, size: 32, address: 0, strategy: 'small' },
+                        { id: 2, size: 256, address: 64, strategy: 'medium' },
+                        { id: 3, size: 512, address: 512, strategy: 'large' }
+                    ],
+                    strategies: [
+                        {
+                            name: 'Small Objects (≤64B)',
+                            type: 'pool',
+                            usage: 75,
+                            totalSize: 256,
+                            usedSize: 192
+                        },
+                        {
+                            name: 'Medium Objects (65-512B)',
+                            type: 'buddy',
+                            usage: 50,
+                            totalSize: 512,
+                            usedSize: 256
+                        },
+                        {
+                            name: 'Large Objects (>512B)',
+                            type: 'direct',
+                            usage: 100,
+                            totalSize: 256,
+                            usedSize: 256
+                        }
+                    ]
+                };
+
+                if (typeof window.testAlgorithm === 'function') {
+                    window.testAlgorithm('hybrid', testData);
+                    log('✓ Hybrid Allocator visualization test completed');
+                    updateStatus('testStatus', 'Hybrid Allocator test completed ✓', 'success');
+                } else {
+                    throw new Error('testAlgorithm function not available');
+                }
+            } catch (error) {
+                log(`✗ Hybrid Allocator test failed: ${error.message}`, 'error');
+                updateStatus('testStatus', 'Hybrid Allocator test failed ✗', 'error');
+            }
+        }
+
+        function testAllAlgorithms() {
+            log('Running comprehensive test of all algorithms...');
+            updateStatus('testStatus', 'Running all tests...', 'info');
+            
+            try {
+                if (!checkContainers()) {
+                    throw new Error('Container check failed');
+                }
+                
+                testBuddySystem();
+                setTimeout(() => {
+                    testMemoryPool();
+                    setTimeout(() => {
+                        testSlabAllocator();
+                        setTimeout(() => {
+                            testHybridAllocator();
+                            setTimeout(() => {
+                                log('🎉 All algorithm tests completed successfully!');
+                                updateStatus('testStatus', 'All tests completed ✓', 'success');
+                            }, 1000);
+                        }, 1000);
+                    }, 1000);
+                }, 1000);
+                
+            } catch (error) {
+                log(`✗ Comprehensive test failed: ${error.message}`, 'error');
+                updateStatus('testStatus', 'Comprehensive test failed ✗', 'error');
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Final Integration Test page loaded');
+            setTimeout(checkContainers, 500);
+        });
+    </script>
+</body>
+</html>

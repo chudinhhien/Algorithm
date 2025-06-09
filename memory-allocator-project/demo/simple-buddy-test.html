@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buddy System Test - Đơn Giản</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        #algorithmSpecificViz {
+            min-height: 300px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Buddy System - Đơn Giản</h1>
+    
+    <div class="test-section">
+        <h2>Kiểm Tra Cơ Bản</h2>
+        <button class="test-button" onclick="testBasics()">Test Class & Container</button>
+        <button class="test-button" onclick="testBuddyGeneration()">Test Buddy Generation</button>
+        <button class="test-button" onclick="testFullVisualization()">Test Full Visualization</button>
+        <button class="test-button" onclick="clearAll()">Clear All</button>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Buddy System Visualization</h2>
+        <div id="algorithmSpecificViz">
+            <p style="color: #666; text-align: center; margin: 50px 0;">
+                Buddy System visualization sẽ xuất hiện ở đây...
+            </p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Log</h2>
+        <textarea id="console" rows="10" cols="100" style="width: 100%; font-family: monospace;" readonly></textarea>
+    </div>
+
+    <script src="js/allocator-demo.js"></script>
+    <script>
+        // Capture console output
+        const consoleTextarea = document.getElementById('console');
+        const originalLog = console.log;
+        const originalError = console.error;
+
+        function logToTextarea(type, ...args) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.join(' ');
+            consoleTextarea.value += `[${timestamp}] ${type}: ${message}\n`;
+            consoleTextarea.scrollTop = consoleTextarea.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            logToTextarea('LOG', ...args);
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            logToTextarea('ERROR', ...args);
+        };
+
+        function showResult(message, isSuccess = true) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${isSuccess ? 'success' : 'error'}`;
+            resultDiv.textContent = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearAll() {
+            document.getElementById('testResults').innerHTML = '';
+            document.getElementById('algorithmSpecificViz').innerHTML = `
+                <p style="color: #666; text-align: center; margin: 50px 0;">
+                    Buddy System visualization sẽ xuất hiện ở đây...
+                </p>
+            `;
+            consoleTextarea.value = '';
+        }
+
+        function testBasics() {
+            console.log('=== TESTING BASICS ===');
+            
+            // Test class
+            try {
+                const demo = new MemoryAllocatorDemo();
+                showResult('✅ MemoryAllocatorDemo class tạo thành công');
+                console.log('Class created successfully:', demo);
+            } catch (e) {
+                showResult('❌ Lỗi tạo class: ' + e.message, false);
+                console.error('Class creation error:', e);
+                return;
+            }
+
+            // Test container
+            const container = document.getElementById('algorithmSpecificViz');
+            if (container) {
+                showResult('✅ Container algorithmSpecificViz tồn tại');
+                console.log('Container found:', container);
+            } else {
+                showResult('❌ Không tìm thấy container algorithmSpecificViz', false);
+                return;
+            }
+        }
+
+        function testBuddyGeneration() {
+            console.log('=== TESTING BUDDY GENERATION ===');
+            
+            try {
+                const demo = new MemoryAllocatorDemo();
+                
+                const testData = {
+                    blocks: [
+                        { id: 1, size: 128, allocated: true, level: 3, address: '0x00000000' },
+                        { id: 2, size: 128, allocated: false, level: 3, address: '0x00000080' },
+                        { id: 3, size: 256, allocated: true, level: 2, address: '0x00000100' }
+                    ],
+                    totalSize: 1024
+                };
+
+                console.log('Test data:', testData);
+                
+                const result = demo.generateBuddyTree(testData);
+                console.log('generateBuddyTree result type:', typeof result);
+                console.log('generateBuddyTree result length:', result.length);
+                console.log('generateBuddyTree result preview:', result.substring(0, 200));
+
+                if (typeof result === 'string' && result.length > 50) {
+                    showResult('✅ generateBuddyTree tạo HTML thành công (' + result.length + ' chars)');
+                } else {
+                    showResult('❌ generateBuddyTree không tạo HTML đúng: ' + typeof result, false);
+                }
+
+            } catch (e) {
+                showResult('❌ Lỗi trong generateBuddyTree: ' + e.message, false);
+                console.error('generateBuddyTree error:', e);
+            }
+        }
+
+        function testFullVisualization() {
+            console.log('=== TESTING FULL VISUALIZATION ===');
+            
+            try {
+                const demo = new MemoryAllocatorDemo();
+                demo.allocatorType = 'buddy';
+                
+                const testData = {
+                    blocks: [
+                        { id: 1, size: 64, allocated: true, level: 4, address: '0x00000000' },
+                        { id: 2, size: 64, allocated: false, level: 4, address: '0x00000040' },
+                        { id: 3, size: 128, allocated: true, level: 3, address: '0x00000080' },
+                        { id: 4, size: 128, allocated: false, level: 3, address: '0x00000100' },
+                        { id: 5, size: 256, allocated: true, level: 2, address: '0x00000180' },
+                        { id: 6, size: 256, allocated: false, level: 2, address: '0x00000280' }
+                    ],
+                    totalSize: 1024
+                };
+
+                console.log('Full test data:', testData);
+                console.log('Allocator type:', demo.allocatorType);
+
+                demo.renderAlgorithmSpecificVisualization(testData);
+                
+                setTimeout(() => {
+                    const container = document.getElementById('algorithmSpecificViz');
+                    const content = container.innerHTML;
+                    
+                    console.log('Container content length after render:', content.length);
+                    console.log('Container content preview:', content.substring(0, 300));
+
+                    if (content.length > 100 && content.includes('buddy')) {
+                        showResult('✅ Full visualization render thành công!');
+                        console.log('Visualization rendered successfully');
+                    } else {
+                        showResult('❌ Visualization không render đúng cách', false);
+                        console.log('Visualization may not have rendered properly');
+                    }
+                }, 500);
+
+            } catch (e) {
+                showResult('❌ Lỗi trong full visualization: ' + e.message, false);
+                console.error('Full visualization error:', e);
+            }
+        }
+
+        // Auto run basic test on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('Auto-running basic tests...');
+                testBasics();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

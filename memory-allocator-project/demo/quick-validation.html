@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick JavaScript Validation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .test-container { max-width: 800px; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 JavaScript Validation Test</h1>
+        <p>This page will test if our JavaScript fixes resolved the visualization issues.</p>
+        
+        <div id="results"></div>
+        
+        <h2>Manual Test Actions:</h2>
+        <button onclick="testBuddySystem()" style="margin: 5px; padding: 10px;">Test Buddy System</button>
+        <button onclick="testMemoryPool()" style="margin: 5px; padding: 10px;">Test Memory Pool</button>
+        <button onclick="testSlabAllocator()" style="margin: 5px; padding: 10px;">Test Slab Allocator</button>
+        <button onclick="testHybridAllocator()" style="margin: 5px; padding: 10px;">Test Hybrid Allocator</button>
+        
+        <div id="test-output" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; min-height: 100px;"></div>
+    </div>
+
+    <script src="js/allocator-demo.js"></script>
+    <script>
+        const results = document.getElementById('results');
+        const testOutput = document.getElementById('test-output');
+        
+        function addResult(message, type) {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+        
+        function logToOutput(message) {
+            testOutput.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+            testOutput.scrollTop = testOutput.scrollHeight;
+        }
+        
+        // Initial validation
+        window.onload = function() {
+            try {
+                // Test 1: Check if classes are defined
+                if (typeof MemoryAllocator === 'undefined') {
+                    addResult('❌ MemoryAllocator class not found', 'error');
+                    return;
+                }
+                addResult('✅ MemoryAllocator class loaded successfully', 'success');
+                
+                if (typeof VisualizationManager === 'undefined') {
+                    addResult('❌ VisualizationManager class not found', 'error');
+                    return;
+                }
+                addResult('✅ VisualizationManager class loaded successfully', 'success');
+                
+                // Test 2: Create instances
+                const allocator = new MemoryAllocator();
+                const vizManager = new VisualizationManager(allocator);
+                addResult('✅ Successfully created allocator and visualization manager instances', 'success');
+                
+                // Test 3: Check if our fixed methods exist and are callable
+                const testMethods = [
+                    'generateBuddyTree',
+                    'generatePoolChunks', 
+                    'generateSlabCaches',
+                    'generateHybridStrategies'
+                ];
+                
+                testMethods.forEach(method => {
+                    if (typeof vizManager[method] === 'function') {
+                        addResult(`✅ Method ${method} exists and is callable`, 'success');
+                    } else {
+                        addResult(`❌ Method ${method} missing or not a function`, 'error');
+                    }
+                });
+                
+                // Test 4: Try to call each method with proper parameters
+                const testLayout = { blocks: [], totalSize: 1024, freeSize: 1024 };
+                
+                testMethods.forEach(method => {
+                    try {
+                        const result = vizManager[method](testLayout);
+                        if (typeof result === 'string') {
+                            addResult(`✅ Method ${method} executed successfully and returned HTML string`, 'success');
+                        } else {
+                            addResult(`⚠️ Method ${method} executed but returned ${typeof result}`, 'warning');
+                        }
+                    } catch (error) {
+                        addResult(`❌ Method ${method} failed: ${error.message}`, 'error');
+                    }
+                });
+                
+                addResult('🎉 All basic validation tests completed!', 'success');
+                
+            } catch (error) {
+                addResult(`❌ Critical error during validation: ${error.message}`, 'error');
+            }
+        };
+        
+        function testBuddySystem() {
+            logToOutput('Testing Buddy System Algorithm...');
+            try {
+                const allocator = new MemoryAllocator();
+                const vizManager = new VisualizationManager(allocator);
+                
+                allocator.setAlgorithm('buddy');
+                logToOutput('✅ Algorithm set to buddy');
+                
+                const ptr1 = allocator.allocate(64);
+                logToOutput(`✅ Allocated 64 bytes at pointer ${ptr1}`);
+                
+                const ptr2 = allocator.allocate(32);
+                logToOutput(`✅ Allocated 32 bytes at pointer ${ptr2}`);
+                
+                const layout = allocator.getMemoryLayout();
+                logToOutput(`✅ Retrieved memory layout with ${layout.blocks ? layout.blocks.length : 0} blocks`);
+                
+                const buddyHTML = vizManager.generateBuddyTree(layout);
+                logToOutput(`✅ Generated buddy tree HTML (${buddyHTML.length} characters)`);
+                
+                // Test visualization update
+                const container = document.createElement('div');
+                vizManager.updateVisualization('buddy', container);
+                logToOutput('✅ Visualization update completed successfully');
+                
+                allocator.deallocate(ptr1);
+                allocator.deallocate(ptr2);
+                logToOutput('✅ Memory deallocated successfully');
+                
+                logToOutput('🎉 Buddy System test completed successfully!');
+                
+            } catch (error) {
+                logToOutput(`❌ Buddy System test failed: ${error.message}`);
+            }
+        }
+        
+        function testMemoryPool() {
+            logToOutput('Testing Memory Pool Algorithm...');
+            try {
+                const allocator = new MemoryAllocator();
+                const vizManager = new VisualizationManager(allocator);
+                
+                allocator.setAlgorithm('pool');
+                logToOutput('✅ Algorithm set to pool');
+                
+                const ptr1 = allocator.allocate(32);
+                logToOutput(`✅ Allocated 32 bytes at pointer ${ptr1}`);
+                
+                const layout = allocator.getMemoryLayout();
+                const poolHTML = vizManager.generatePoolChunks(layout);
+                logToOutput(`✅ Generated pool chunks HTML (${poolHTML.length} characters)`);
+                
+                const container = document.createElement('div');
+                vizManager.updateVisualization('pool', container);
+                logToOutput('✅ Pool visualization update completed');
+                
+                allocator.deallocate(ptr1);
+                logToOutput('🎉 Memory Pool test completed successfully!');
+                
+            } catch (error) {
+                logToOutput(`❌ Memory Pool test failed: ${error.message}`);
+            }
+        }
+        
+        function testSlabAllocator() {
+            logToOutput('Testing Slab Allocator Algorithm...');
+            try {
+                const allocator = new MemoryAllocator();
+                const vizManager = new VisualizationManager(allocator);
+                
+                allocator.setAlgorithm('slab');
+                logToOutput('✅ Algorithm set to slab');
+                
+                const ptr1 = allocator.allocate(16);
+                logToOutput(`✅ Allocated 16 bytes at pointer ${ptr1}`);
+                
+                const layout = allocator.getMemoryLayout();
+                const slabHTML = vizManager.generateSlabCaches(layout);
+                logToOutput(`✅ Generated slab caches HTML (${slabHTML.length} characters)`);
+                
+                const container = document.createElement('div');
+                vizManager.updateVisualization('slab', container);
+                logToOutput('✅ Slab visualization update completed');
+                
+                allocator.deallocate(ptr1);
+                logToOutput('🎉 Slab Allocator test completed successfully!');
+                
+            } catch (error) {
+                logToOutput(`❌ Slab Allocator test failed: ${error.message}`);
+            }
+        }
+        
+        function testHybridAllocator() {
+            logToOutput('Testing Hybrid Allocator Algorithm...');
+            try {
+                const allocator = new MemoryAllocator();
+                const vizManager = new VisualizationManager(allocator);
+                
+                allocator.setAlgorithm('hybrid');
+                logToOutput('✅ Algorithm set to hybrid');
+                
+                const ptr1 = allocator.allocate(128);
+                logToOutput(`✅ Allocated 128 bytes at pointer ${ptr1}`);
+                
+                const layout = allocator.getMemoryLayout();
+                const hybridHTML = vizManager.generateHybridStrategies(layout);
+                logToOutput(`✅ Generated hybrid strategies HTML (${hybridHTML.length} characters)`);
+                
+                const container = document.createElement('div');
+                vizManager.updateVisualization('hybrid', container);
+                logToOutput('✅ Hybrid visualization update completed');
+                
+                allocator.deallocate(ptr1);
+                logToOutput('🎉 Hybrid Allocator test completed successfully!');
+                
+            } catch (error) {
+                logToOutput(`❌ Hybrid Allocator test failed: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualization Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-container { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .test-result { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Memory Allocator Visualization Test</h1>
+    
+    <div class="test-container">
+        <h2>Quick Tests</h2>
+        <button onclick="testContainerExists()">Test Container Exists</button>
+        <button onclick="testFunctions()">Test Functions</button>
+        <button onclick="testBuddyVisualization()">Test Buddy Visualization</button>
+        <button onclick="testPoolVisualization()">Test Pool Visualization</button>
+        <button onclick="testSlabVisualization()">Test Slab Visualization</button>
+        <button onclick="testHybridVisualization()">Test Hybrid Visualization</button>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Algorithm-Specific Visualization</h2>
+        <div id="algorithmSpecificViz" style="border: 2px solid #007bff; min-height: 200px; padding: 20px;">
+            <!-- Algorithm-specific visualizations will be rendered here -->
+        </div>
+    </div>
+
+    <script src="js/allocator-demo.js"></script>
+    <script>
+        function logResult(test, passed, details = '') {
+            const resultDiv = document.getElementById('testResults');
+            const result = document.createElement('div');
+            result.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            result.innerHTML = `<strong>${test}:</strong> ${passed ? 'PASS' : 'FAIL'} ${details}`;
+            resultDiv.appendChild(result);
+        }
+
+        function testContainerExists() {
+            const container = document.getElementById('algorithmSpecificViz');
+            logResult('Container Exists', !!container, container ? '- Container found' : '- Container not found');
+        }
+
+        function testFunctions() {
+            let demo;
+            try {
+                demo = new MemoryAllocatorDemo();
+                logResult('MemoryAllocatorDemo Class', true, '- Class instantiated successfully');
+            } catch (e) {
+                logResult('MemoryAllocatorDemo Class', false, `- Error: ${e.message}`);
+                return;
+            }
+
+            // Test individual methods
+            const methods = ['generateBuddyTree', 'generatePoolChunks', 'generateSlabCaches', 'generateHybridStrategies'];
+            methods.forEach(method => {
+                try {
+                    const result = demo[method]({});
+                    logResult(`${method} Method`, typeof result === 'string', `- Returned: ${typeof result}`);
+                } catch (e) {
+                    logResult(`${method} Method`, false, `- Error: ${e.message}`);
+                }
+            });
+        }
+
+        function testBuddyVisualization() {
+            try {
+                const demo = new MemoryAllocatorDemo();
+                demo.allocatorType = 'buddy';
+                const mockData = {
+                    blocks: [
+                        { id: 1, size: 128, allocated: true, level: 3, address: '0x00000000' },
+                        { id: 2, size: 128, allocated: false, level: 3, address: '0x00000080' }
+                    ],
+                    totalSize: 1024
+                };
+                demo.renderAlgorithmSpecificVisualization(mockData);
+                logResult('Buddy Visualization', true, '- Rendered successfully');
+            } catch (e) {
+                logResult('Buddy Visualization', false, `- Error: ${e.message}`);
+            }
+        }
+
+        function testPoolVisualization() {
+            try {
+                const demo = new MemoryAllocatorDemo();
+                demo.allocatorType = 'pool';
+                const mockData = {
+                    pools: [
+                        { size: 32, used: 15, total: 32 },
+                        { size: 64, used: 8, total: 16 }
+                    ],
+                    totalSize: 2048
+                };
+                demo.renderAlgorithmSpecificVisualization(mockData);
+                logResult('Pool Visualization', true, '- Rendered successfully');
+            } catch (e) {
+                logResult('Pool Visualization', false, `- Error: ${e.message}`);
+            }
+        }
+
+        function testSlabVisualization() {
+            try {
+                const demo = new MemoryAllocatorDemo();
+                demo.allocatorType = 'slab';
+                const mockData = {
+                    caches: [
+                        { objectSize: 16, slabSize: 4096, objectsPerSlab: 256, allocatedSlabs: 2 },
+                        { objectSize: 32, slabSize: 4096, objectsPerSlab: 128, allocatedSlabs: 1 }
+                    ],
+                    totalSize: 32768
+                };
+                demo.renderAlgorithmSpecificVisualization(mockData);
+                logResult('Slab Visualization', true, '- Rendered successfully');
+            } catch (e) {
+                logResult('Slab Visualization', false, `- Error: ${e.message}`);
+            }
+        }
+
+        function testHybridVisualization() {
+            try {
+                const demo = new MemoryAllocatorDemo();
+                demo.allocatorType = 'hybrid';
+                const mockData = {
+                    strategies: [
+                        { name: 'Buddy System', usage: 45, totalAllocations: 230 },
+                        { name: 'Slab Allocator', usage: 35, totalAllocations: 180 },
+                        { name: 'Memory Pool', usage: 20, totalAllocations: 90 }
+                    ],
+                    totalSize: 8192
+                };
+                demo.renderAlgorithmSpecificVisualization(mockData);
+                logResult('Hybrid Visualization', true, '- Rendered successfully');
+            } catch (e) {
+                logResult('Hybrid Visualization', false, `- Error: ${e.message}`);
+            }
+        }
+
+        // Auto-run basic tests on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testContainerExists();
+                testFunctions();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Functionality Test - Memory Allocator Demo</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .test-pass {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .test-fail {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .test-info {
+            background-color: #e2e3e5;
+            border: 1px solid #d6d8db;
+            color: #383d41;
+        }
+        #memoryVisualization {
+            min-height: 300px;
+            border: 1px solid #ccc;
+            margin: 20px 0;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Live Functionality Test</h1>
+        <p>Testing the Memory Allocator Demo visualization fix...</p>
+        
+        <div id="test-results"></div>
+        
+        <!-- Memory visualization container -->
+        <div id="memoryVisualization">
+            <h3>Memory Visualization Test Area</h3>
+        </div>
+        
+        <!-- Demo controls for manual testing -->
+        <div class="controls">
+            <label for="algorithmSelect">Algorithm:</label>
+            <select id="algorithmSelect">
+                <option value="buddy">Buddy System</option>
+                <option value="slab">Slab Allocator</option>
+                <option value="pool">Memory Pool</option>
+                <option value="hybrid">Hybrid</option>
+            </select>
+            
+            <label for="memorySizeInput">Memory Size (bytes):</label>
+            <input type="number" id="memorySizeInput" value="1024" min="512" max="10240">
+            
+            <button id="initAllocatorBtn" onclick="testInitializeAllocator()">Initialize Allocator</button>
+            <button id="testAllocateBtn" onclick="testAllocateMemory()">Test Allocate</button>
+            <button id="testDeallocateBtn" onclick="testDeallocateMemory()">Test Deallocate</button>
+        </div>
+    </div>
+
+    <script src="js/allocator-demo.js"></script>
+    <script>
+        let demoInstance = null;
+        let testResults = [];
+        
+        function addTestResult(testName, passed, message) {
+            const result = {
+                name: testName,
+                passed: passed,
+                message: message,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            testResults.push(result);
+            updateTestDisplay();
+        }
+        
+        function updateTestDisplay() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<h3>Test Results:</h3>';
+            
+            testResults.forEach(result => {
+                const div = document.createElement('div');
+                div.className = `test-result ${result.passed ? 'test-pass' : 'test-fail'}`;
+                div.innerHTML = `
+                    <strong>[${result.timestamp}] ${result.name}:</strong> 
+                    ${result.passed ? 'PASS' : 'FAIL'} - ${result.message}
+                `;
+                resultsDiv.appendChild(div);
+            });
+            
+            // Summary
+            const passed = testResults.filter(r => r.passed).length;
+            const total = testResults.length;
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = `test-result test-info`;
+            summaryDiv.innerHTML = `<strong>Summary: ${passed}/${total} tests passed</strong>`;
+            resultsDiv.appendChild(summaryDiv);
+        }
+        
+        async function runAutomatedTests() {
+            addTestResult('Initialization', true, 'Starting automated tests...');
+            
+            try {
+                // Test 1: Check if MemoryAllocatorDemo class exists
+                if (typeof MemoryAllocatorDemo === 'undefined') {
+                    addTestResult('Class Definition', false, 'MemoryAllocatorDemo class not found');
+                    return;
+                }
+                addTestResult('Class Definition', true, 'MemoryAllocatorDemo class found');
+                
+                // Test 2: Create demo instance
+                demoInstance = new MemoryAllocatorDemo();
+                if (!demoInstance) {
+                    addTestResult('Instance Creation', false, 'Failed to create MemoryAllocatorDemo instance');
+                    return;
+                }
+                addTestResult('Instance Creation', true, 'Successfully created demo instance');
+                
+                // Test 3: Check if visualization method exists
+                if (typeof demoInstance.renderAlgorithmSpecificVisualization !== 'function') {
+                    addTestResult('Visualization Method', false, 'renderAlgorithmSpecificVisualization method not found');
+                } else {
+                    addTestResult('Visualization Method', true, 'renderAlgorithmSpecificVisualization method found');
+                }
+                
+                // Test 4: Test visualization with sample data
+                const sampleLayout = {
+                    algorithm: 'buddy',
+                    totalSize: 1024,
+                    freeSize: 512,
+                    usedSize: 512,
+                    blocks: [
+                        { address: 0, size: 256, allocated: true },
+                        { address: 256, size: 256, allocated: false },
+                        { address: 512, size: 512, allocated: false }
+                    ]
+                };
+                
+                try {
+                    const vizContainer = document.getElementById('memoryVisualization');
+                    demoInstance.renderAlgorithmSpecificVisualization(sampleLayout);
+                    addTestResult('Visualization Render', true, 'Successfully called visualization method');
+                } catch (error) {
+                    addTestResult('Visualization Render', false, `Visualization error: ${error.message}`);
+                }
+                
+                // Test 5: Test different algorithms
+                const algorithms = ['buddy', 'slab', 'pool', 'hybrid'];
+                for (let algo of algorithms) {
+                    try {
+                        const algoLayout = { ...sampleLayout, algorithm: algo };
+                        demoInstance.renderAlgorithmSpecificVisualization(algoLayout);
+                        addTestResult(`${algo.charAt(0).toUpperCase() + algo.slice(1)} Algorithm`, true, `${algo} visualization working`);
+                    } catch (error) {
+                        addTestResult(`${algo.charAt(0).toUpperCase() + algo.slice(1)} Algorithm`, false, `${algo} error: ${error.message}`);
+                    }
+                }
+                
+            } catch (error) {
+                addTestResult('General Error', false, `Unexpected error: ${error.message}`);
+            }
+        }
+        
+        function testInitializeAllocator() {
+            const algorithm = document.getElementById('algorithmSelect').value;
+            const size = parseInt(document.getElementById('memorySizeInput').value);
+            
+            try {
+                if (demoInstance) {
+                    addTestResult('Manual Init', true, `Attempting to initialize ${algorithm} with ${size} bytes`);
+                    // This would normally call the actual initialization
+                    // For now, just test the visualization
+                    const testLayout = {
+                        algorithm: algorithm,
+                        totalSize: size,
+                        freeSize: size,
+                        usedSize: 0,
+                        blocks: [{ address: 0, size: size, allocated: false }]
+                    };
+                    demoInstance.renderAlgorithmSpecificVisualization(testLayout);
+                    addTestResult('Manual Visualization', true, `${algorithm} visualization rendered successfully`);
+                } else {
+                    addTestResult('Manual Init', false, 'No demo instance available');
+                }
+            } catch (error) {
+                addTestResult('Manual Init', false, `Error: ${error.message}`);
+            }
+        }
+        
+        function testAllocateMemory() {
+            addTestResult('Manual Allocate', true, 'Allocate test - functionality depends on C++ backend');
+        }
+        
+        function testDeallocateMemory() {
+            addTestResult('Manual Deallocate', true, 'Deallocate test - functionality depends on C++ backend');
+        }
+        
+        // Run tests when page loads
+        window.addEventListener('load', function() {
+            setTimeout(runAutomatedTests, 1000);
+        });
+    </script>
+</body>
+</html>

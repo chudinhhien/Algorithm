@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Buddy System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e3f2fd;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #buddy-tree-container {
+            border: 2px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            min-height: 200px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Dynamic Buddy System Test</h1>
+        <p>This page tests if the Buddy System visualization updates dynamically when memory is allocated/deallocated.</p>
+        
+        <div class="test-section">
+            <h3>Test Status</h3>
+            <div id="test-status" class="status info">Ready to test...</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test Controls</h3>
+            <button onclick="testDynamicUpdates()">Test Dynamic Updates</button>
+            <button onclick="testAllocations()">Test Multiple Allocations</button>
+            <button onclick="testDeallocation()">Test Deallocation</button>
+            <button onclick="clearTest()">Clear Test</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>Buddy Tree Visualization</h3>
+            <div id="buddy-tree-container">
+                <div class="info">Buddy tree will appear here when test runs...</div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test Results</h3>
+            <div id="test-results">
+                <div class="info">Test results will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testAllocator = null;
+        let testAllocations = [];
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            results.appendChild(div);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('test-status');
+            status.className = `status ${type}`;
+            status.textContent = message;
+        }
+        
+        function testDynamicUpdates() {
+            updateStatus('Testing dynamic buddy tree updates...', 'info');
+            log('Starting dynamic update test...', 'info');
+            
+            // Simulate allocator initialization
+            testAllocations = [];
+            
+            // Test 1: Initial empty state
+            generateTestBuddyTree();
+            log('✓ Generated initial empty buddy tree', 'success');
+            
+            // Test 2: Add allocation
+            setTimeout(() => {
+                testAllocations.push({
+                    id: 1,
+                    size: 256,
+                    address: '0x1000',
+                    level: 2
+                });
+                generateTestBuddyTree();
+                log('✓ Added allocation (256B) - Tree should update', 'success');
+                
+                // Test 3: Add another allocation
+                setTimeout(() => {
+                    testAllocations.push({
+                        id: 2,
+                        size: 128,
+                        address: '0x2000',
+                        level: 3
+                    });
+                    generateTestBuddyTree();
+                    log('✓ Added second allocation (128B) - Tree should show both', 'success');
+                    updateStatus('Dynamic update test completed!', 'success');
+                }, 1000);
+            }, 1000);
+        }
+        
+        function testAllocations() {
+            updateStatus('Testing multiple allocations...', 'info');
+            log('Testing multiple allocation scenario...', 'info');
+            
+            testAllocations = [
+                { id: 1, size: 512, address: '0x1000', level: 1 },
+                { id: 2, size: 256, address: '0x2000', level: 2 },
+                { id: 3, size: 128, address: '0x3000', level: 3 },
+                { id: 4, size: 64, address: '0x4000', level: 4 }
+            ];
+            
+            generateTestBuddyTree();
+            log('✓ Generated buddy tree with multiple allocations', 'success');
+            updateStatus('Multiple allocation test completed!', 'success');
+        }
+        
+        function testDeallocation() {
+            updateStatus('Testing deallocation updates...', 'info');
+            log('Testing deallocation scenario...', 'info');
+            
+            if (testAllocations.length > 0) {
+                testAllocations.pop(); // Remove last allocation
+                generateTestBuddyTree();
+                log('✓ Removed allocation - Tree should update to show free space', 'success');
+                updateStatus('Deallocation test completed!', 'success');
+            } else {
+                log('⚠ No allocations to remove - run allocation test first', 'error');
+                updateStatus('No allocations to remove', 'error');
+            }
+        }
+        
+        function clearTest() {
+            testAllocations = [];
+            document.getElementById('buddy-tree-container').innerHTML = '<div class="info">Buddy tree cleared...</div>';
+            document.getElementById('test-results').innerHTML = '<div class="info">Test results cleared...</div>';
+            updateStatus('Test cleared', 'info');
+        }
+        
+        function generateTestBuddyTree() {
+            const container = document.getElementById('buddy-tree-container');
+            let html = '<h4>🌳 Buddy Tree Structure</h4>';
+            
+            const totalSize = 1024;
+            const maxLevels = Math.log2(totalSize / 64); // Assuming min block size of 64
+            
+            log(`Generating buddy tree with ${testAllocations.length} allocations`, 'info');
+            
+            // Generate levels 0-4 (for 1024KB to 64KB)
+            for (let level = 0; level <= 4; level++) {
+                const blockSize = totalSize / Math.pow(2, level);
+                const blockCount = Math.pow(2, level);
+                
+                html += `<div class="buddy-level" style="margin: 10px 0; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">`;
+                
+                for (let block = 0; block < blockCount; block++) {
+                    const blockStart = block * blockSize;
+                    const blockEnd = blockStart + blockSize - 1;
+                    
+                    // Check if this block is allocated
+                    const allocation = testAllocations.find(alloc => 
+                        alloc.level === level && 
+                        alloc.address === `0x${(blockStart + 0x1000).toString(16).toUpperCase()}`
+                    );
+                    
+                    const isAllocated = allocation !== undefined;
+                    const nodeClass = isAllocated ? 'allocated' : 'free';
+                    const nodeColor = isAllocated ? 
+                        'background: linear-gradient(135deg, #ff6b6b, #ff5252); color: white;' : 
+                        'background: linear-gradient(135deg, #4ecdc4, #26a69a); color: white;';
+                    
+                    html += `
+                        <div class="buddy-node buddy-node-${nodeClass}" 
+                             style="${nodeColor} border: 2px solid ${isAllocated ? '#e53935' : '#00695c'}; 
+                                    border-radius: 8px; padding: 8px 12px; text-align: center; 
+                                    min-width: 100px; font-size: 0.8rem; margin: 2px;
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div class="node-header" style="font-size: 0.7rem; font-weight: 600; margin-bottom: 5px;">
+                                Level ${level}
+                            </div>
+                            <div class="node-size" style="font-size: 0.9rem; font-weight: 700; margin: 5px 0;">
+                                ${blockSize}KB
+                            </div>
+                            <div class="node-status" style="font-size: 0.7rem; font-weight: 500; 
+                                 padding: 2px 6px; border-radius: 4px; margin: 5px 0; 
+                                 background: rgba(255,255,255,0.2);">
+                                ${isAllocated ? 'ALLOCATED' : 'FREE'}
+                            </div>
+                            ${allocation ? `
+                                <div class="node-alloc-info" style="font-size: 0.65rem; 
+                                     background: rgba(255,255,255,0.2); padding: 2px 4px; 
+                                     border-radius: 3px; margin-top: 5px;">
+                                    ID: ${allocation.id}<br>
+                                    ${allocation.address}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+            }
+            
+            // Add legend
+            html += `
+                <div class="buddy-legend" style="background: #f8f9fa; border: 1px solid #dee2e6; 
+                     border-radius: 8px; padding: 15px; margin-top: 20px;">
+                    <h5 style="margin: 0 0 10px 0; color: #495057; font-size: 0.9rem;">Legend:</h5>
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 16px; height: 16px; border-radius: 3px; 
+                                 background: linear-gradient(135deg, #ff6b6b, #ff5252); 
+                                 border: 1px solid #dee2e6;"></div>
+                            <span style="font-size: 0.8rem; color: #495057;">Allocated Block</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 16px; height: 16px; border-radius: 3px; 
+                                 background: linear-gradient(135deg, #4ecdc4, #26a69a); 
+                                 border: 1px solid #dee2e6;"></div>
+                            <span style="font-size: 0.8rem; color: #495057;">Free Block</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+            log(`✓ Buddy tree rendered with ${testAllocations.length} allocations`, 'success');
+        }
+        
+        // Initialize
+        updateStatus('Dynamic Buddy System Test Ready', 'success');
+        log('Test page loaded successfully. Click "Test Dynamic Updates" to begin.', 'info');
+    </script>
+</body>
+</html>

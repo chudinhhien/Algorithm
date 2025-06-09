@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Buddy System</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f5f5f5; 
+        }
+        .debug-container { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin: 20px 0; 
+            border: 1px solid #ddd;
+        }
+        .error { 
+            color: red; 
+            background: #ffe6e6; 
+            padding: 10px; 
+            border-radius: 4px; 
+            margin: 10px 0;
+        }
+        .success { 
+            color: green; 
+            background: #e6ffe6; 
+            padding: 10px; 
+            border-radius: 4px; 
+            margin: 10px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #algorithmSpecificViz {
+            min-height: 200px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐛 Debug Buddy System Visualization</h1>
+    
+    <div class="debug-container">
+        <h2>Quick Debug Tests</h2>
+        <button onclick="testClassExists()">Test Class Exists</button>
+        <button onclick="testContainerExists()">Test Container</button>
+        <button onclick="testBuddyMethod()">Test Buddy Method</button>
+        <button onclick="testBuddyVisualization()">Test Full Buddy Viz</button>
+        <button onclick="clearResults()">Clear Results</button>
+        
+        <div id="debugResults"></div>
+    </div>
+
+    <div class="debug-container">
+        <h2>Buddy Visualization Container</h2>
+        <div id="algorithmSpecificViz">
+            <!-- Buddy visualization will appear here -->
+        </div>
+    </div>
+
+    <div class="debug-container">
+        <h2>Console Log</h2>
+        <div id="consoleLog" style="background: #f8f9fa; padding: 15px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto;"></div>
+    </div>
+
+    <script src="js/allocator-demo.js"></script>
+    <script>
+        // Capture console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleDiv = document.getElementById('consoleLog');
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            consoleDiv.textContent += '[LOG] ' + args.join(' ') + '\n';
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            consoleDiv.textContent += '[ERROR] ' + args.join(' ') + '\n';
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        };
+
+        function logResult(test, success, message) {
+            const resultsDiv = document.getElementById('debugResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = success ? 'success' : 'error';
+            resultDiv.innerHTML = `<strong>${test}:</strong> ${message}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearResults() {
+            document.getElementById('debugResults').innerHTML = '';
+            document.getElementById('consoleLog').textContent = '';
+        }
+
+        function testClassExists() {
+            try {
+                const demo = new MemoryAllocatorDemo();
+                logResult('Class Test', true, 'MemoryAllocatorDemo class exists and can be instantiated');
+                return demo;
+            } catch (e) {
+                logResult('Class Test', false, `Error: ${e.message}`);
+                console.error('Class instantiation error:', e);
+                return null;
+            }
+        }
+
+        function testContainerExists() {
+            const container = document.getElementById('algorithmSpecificViz');
+            if (container) {
+                logResult('Container Test', true, `Container found with dimensions: ${container.offsetWidth}x${container.offsetHeight}`);
+                return container;
+            } else {
+                logResult('Container Test', false, 'Container algorithmSpecificViz not found');
+                return null;
+            }
+        }
+
+        function testBuddyMethod() {
+            const demo = testClassExists();
+            if (!demo) return;
+
+            try {
+                const testData = {
+                    blocks: [
+                        { id: 1, size: 128, allocated: true, level: 3, address: '0x00000000' },
+                        { id: 2, size: 128, allocated: false, level: 3, address: '0x00000080' }
+                    ],
+                    totalSize: 1024
+                };
+
+                console.log('Testing generateBuddyTree with data:', testData);
+                const result = demo.generateBuddyTree(testData);
+                console.log('generateBuddyTree result:', result);
+                
+                if (typeof result === 'string' && result.length > 0) {
+                    logResult('Buddy Method Test', true, `generateBuddyTree returned HTML string (${result.length} chars)`);
+                } else {
+                    logResult('Buddy Method Test', false, `generateBuddyTree returned unexpected result: ${typeof result}`);
+                }
+            } catch (e) {
+                logResult('Buddy Method Test', false, `Error: ${e.message}`);
+                console.error('Buddy method error:', e);
+            }
+        }
+
+        function testBuddyVisualization() {
+            const demo = testClassExists();
+            const container = testContainerExists();
+            
+            if (!demo || !container) {
+                logResult('Full Viz Test', false, 'Prerequisites failed - missing demo class or container');
+                return;
+            }
+
+            try {
+                demo.allocatorType = 'buddy';
+                const testData = {
+                    blocks: [
+                        { id: 1, size: 128, allocated: true, level: 3, address: '0x00000000' },
+                        { id: 2, size: 128, allocated: false, level: 3, address: '0x00000080' },
+                        { id: 3, size: 256, allocated: true, level: 2, address: '0x00000100' },
+                        { id: 4, size: 256, allocated: false, level: 2, address: '0x00000200' }
+                    ],
+                    totalSize: 1024
+                };
+
+                console.log('Testing full buddy visualization...');
+                console.log('Data:', testData);
+                console.log('Allocator type:', demo.allocatorType);
+
+                demo.renderAlgorithmSpecificVisualization(testData);
+
+                // Check if content was added
+                setTimeout(() => {
+                    const containerContent = container.innerHTML;
+                    console.log('Container content length after render:', containerContent.length);
+                    console.log('Container content:', containerContent.substring(0, 200) + '...');
+
+                    if (containerContent.length > 50) {
+                        logResult('Full Viz Test', true, `Buddy visualization rendered successfully (${containerContent.length} chars)`);
+                    } else {
+                        logResult('Full Viz Test', false, 'Container appears empty after rendering');
+                    }
+                }, 500);
+
+            } catch (e) {
+                logResult('Full Viz Test', false, `Error: ${e.message}`);
+                console.error('Full visualization error:', e);
+            }
+        }
+
+        // Auto-run basic tests on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('=== AUTO DEBUG TESTS ===');
+                testClassExists();
+                testContainerExists();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

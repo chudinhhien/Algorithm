@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Allocator Verification Test</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1><i class="fas fa-check-circle"></i> Memory Allocator Verification</h1>
+        
+        <div class="test-section">
+            <h2>System Status Check</h2>
+            <div id="systemStatus"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Algorithm Visualization Tests</h2>
+            <div id="algorithmTests"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Memory Layout Test</h2>
+            <div id="memoryTest"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Interactive Features Test</h2>
+            <div id="interactiveTest"></div>
+            <button onclick="runAllocatorTest()" class="btn btn-primary">
+                <i class="fas fa-play"></i> Test Allocator Functions
+            </button>
+        </div>
+    </div>
+
+    <script src="js/allocator-demo.js"></script>
+    <script>
+        // Verification Test Script
+        let testResults = {
+            systemStatus: [],
+            algorithmTests: [],
+            memoryTests: [],
+            interactiveTests: []
+        };
+
+        function addResult(category, message, status) {
+            testResults[category].push({ message, status });
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            Object.keys(testResults).forEach(category => {
+                const container = document.getElementById(category);
+                if (container) {
+                    container.innerHTML = testResults[category].map(result => 
+                        `<div class="status ${result.status}">${result.message}</div>`
+                    ).join('');
+                }
+            });
+        }
+
+        // Run system checks
+        function runSystemChecks() {
+            try {
+                // Check if main classes exist
+                if (typeof MemoryAllocator !== 'undefined') {
+                    addResult('systemStatus', '✅ MemoryAllocator class loaded successfully', 'success');
+                } else {
+                    addResult('systemStatus', '❌ MemoryAllocator class not found', 'error');
+                }
+
+                if (typeof VisualizationManager !== 'undefined') {
+                    addResult('systemStatus', '✅ VisualizationManager class loaded successfully', 'success');
+                } else {
+                    addResult('systemStatus', '❌ VisualizationManager class not found', 'error');
+                }
+
+                // Test allocator creation
+                const allocator = new MemoryAllocator();
+                addResult('systemStatus', '✅ Memory allocator instance created', 'success');
+
+                // Test visualization manager
+                const vizManager = new VisualizationManager(allocator);
+                addResult('systemStatus', '✅ Visualization manager instance created', 'success');
+
+            } catch (error) {
+                addResult('systemStatus', `❌ System check failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test algorithm visualizations
+        function testAlgorithmVisualizations() {
+            try {
+                const allocator = new MemoryAllocator();
+                const vizManager = new VisualizationManager(allocator);
+
+                // Test each algorithm
+                const algorithms = ['buddy', 'pool', 'slab', 'hybrid'];
+                
+                algorithms.forEach(algo => {
+                    try {
+                        allocator.setAlgorithm(algo);
+                        allocator.allocate(64); // Test allocation
+                        
+                        const layout = allocator.getMemoryLayout();
+                        addResult('algorithmTests', `✅ ${algo.toUpperCase()} algorithm: allocation successful`, 'success');
+                        
+                        // Test visualization generation
+                        switch(algo) {
+                            case 'buddy':
+                                const buddyHTML = vizManager.generateBuddyTree(layout);
+                                if (buddyHTML && buddyHTML.length > 0) {
+                                    addResult('algorithmTests', `✅ ${algo.toUpperCase()}: visualization generated`, 'success');
+                                } else {
+                                    addResult('algorithmTests', `⚠️ ${algo.toUpperCase()}: visualization empty`, 'info');
+                                }
+                                break;
+                            case 'pool':
+                                const poolHTML = vizManager.generatePoolChunks(layout);
+                                if (poolHTML && poolHTML.length > 0) {
+                                    addResult('algorithmTests', `✅ ${algo.toUpperCase()}: visualization generated`, 'success');
+                                } else {
+                                    addResult('algorithmTests', `⚠️ ${algo.toUpperCase()}: visualization empty`, 'info');
+                                }
+                                break;
+                            case 'slab':
+                                const slabHTML = vizManager.generateSlabCaches(layout);
+                                if (slabHTML && slabHTML.length > 0) {
+                                    addResult('algorithmTests', `✅ ${algo.toUpperCase()}: visualization generated`, 'success');
+                                } else {
+                                    addResult('algorithmTests', `⚠️ ${algo.toUpperCase()}: visualization empty`, 'info');
+                                }
+                                break;
+                            case 'hybrid':
+                                const hybridHTML = vizManager.generateHybridStrategies(layout);
+                                if (hybridHTML && hybridHTML.length > 0) {
+                                    addResult('algorithmTests', `✅ ${algo.toUpperCase()}: visualization generated`, 'success');
+                                } else {
+                                    addResult('algorithmTests', `⚠️ ${algo.toUpperCase()}: visualization empty`, 'info');
+                                }
+                                break;
+                        }
+                        
+                    } catch (error) {
+                        addResult('algorithmTests', `❌ ${algo.toUpperCase()}: ${error.message}`, 'error');
+                    }
+                });
+
+            } catch (error) {
+                addResult('algorithmTests', `❌ Algorithm test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test memory operations
+        function testMemoryOperations() {
+            try {
+                const allocator = new MemoryAllocator();
+                
+                // Test basic allocation
+                const ptr1 = allocator.allocate(32);
+                addResult('memoryTests', `✅ 32-byte allocation: pointer ${ptr1}`, 'success');
+                
+                const ptr2 = allocator.allocate(64);
+                addResult('memoryTests', `✅ 64-byte allocation: pointer ${ptr2}`, 'success');
+                
+                // Test deallocation
+                allocator.deallocate(ptr1);
+                addResult('memoryTests', `✅ Deallocation successful for pointer ${ptr1}`, 'success');
+                
+                // Test memory layout
+                const layout = allocator.getMemoryLayout();
+                if (layout && layout.blocks) {
+                    addResult('memoryTests', `✅ Memory layout retrieved: ${layout.blocks.length} blocks`, 'success');
+                } else {
+                    addResult('memoryTests', '⚠️ Memory layout format unexpected', 'info');
+                }
+                
+            } catch (error) {
+                addResult('memoryTests', `❌ Memory test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Run allocator test
+        function runAllocatorTest() {
+            addResult('interactiveTests', '🔄 Starting interactive allocator test...', 'info');
+            
+            try {
+                const allocator = new MemoryAllocator();
+                const vizManager = new VisualizationManager(allocator);
+                
+                // Set to buddy algorithm for testing
+                allocator.setAlgorithm('buddy');
+                addResult('interactiveTests', '✅ Algorithm set to Buddy System', 'success');
+                
+                // Perform multiple allocations
+                const ptrs = [];
+                for (let i = 0; i < 3; i++) {
+                    const size = 32 * (i + 1);
+                    const ptr = allocator.allocate(size);
+                    ptrs.push(ptr);
+                    addResult('interactiveTests', `✅ Allocated ${size} bytes at pointer ${ptr}`, 'success');
+                }
+                
+                // Test visualization update
+                const container = document.createElement('div');
+                vizManager.updateVisualization('buddy', container);
+                addResult('interactiveTests', '✅ Visualization update completed', 'success');
+                
+                // Deallocate
+                ptrs.forEach(ptr => {
+                    allocator.deallocate(ptr);
+                    addResult('interactiveTests', `✅ Deallocated pointer ${ptr}`, 'success');
+                });
+                
+                addResult('interactiveTests', '🎉 Interactive test completed successfully!', 'success');
+                
+            } catch (error) {
+                addResult('interactiveTests', `❌ Interactive test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Run all tests on page load
+        window.onload = function() {
+            addResult('systemStatus', '🔄 Running system checks...', 'info');
+            runSystemChecks();
+            
+            setTimeout(() => {
+                addResult('algorithmTests', '🔄 Testing algorithm visualizations...', 'info');
+                testAlgorithmVisualizations();
+            }, 500);
+            
+            setTimeout(() => {
+                addResult('memoryTests', '🔄 Testing memory operations...', 'info');
+                testMemoryOperations();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

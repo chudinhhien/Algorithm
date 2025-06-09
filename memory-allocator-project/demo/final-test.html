@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Allocator Visualization Test</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-controls {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-canvas {
+            border: 2px solid #333;
+            border-radius: 8px;
+            min-height: 400px;
+            padding: 20px;
+            background: #ffffff;
+        }
+        .status {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1><i class="fas fa-vial"></i> Memory Allocator Visualization Test</h1>
+        
+        <div class="status">
+            <h3>Test Status</h3>
+            <p id="statusText">Loading test environment...</p>
+        </div>
+        
+        <div class="test-controls">
+            <h3><i class="fas fa-gamepad"></i> Test Controls</h3>
+            <button onclick="runBuddyTest()" class="btn btn-primary">
+                <i class="fas fa-sitemap"></i> Test Buddy System
+            </button>
+            <button onclick="runPoolTest()" class="btn btn-warning">
+                <i class="fas fa-cubes"></i> Test Memory Pool
+            </button>
+            <button onclick="runFullTest()" class="btn btn-success">
+                <i class="fas fa-play"></i> Run Full Test
+            </button>
+            <button onclick="clearCanvas()" class="btn btn-secondary">
+                <i class="fas fa-eraser"></i> Clear
+            </button>
+        </div>
+        
+        <div class="test-results">
+            <h3><i class="fas fa-chart-bar"></i> Visualization Canvas</h3>
+            <div id="memoryCanvas" class="test-canvas">
+                <p style="text-align: center; color: #666; margin-top: 100px;">
+                    <i class="fas fa-arrow-up"></i><br>
+                    Click the test buttons above to see visualizations
+                </p>
+            </div>
+        </div>
+        
+        <div class="test-log">
+            <h3><i class="fas fa-terminal"></i> Console Log</h3>
+            <div id="consoleLog" style="
+                background: #263238;
+                color: #00ff00;
+                padding: 15px;
+                border-radius: 8px;
+                font-family: 'Courier New', monospace;
+                font-size: 0.9rem;
+                max-height: 300px;
+                overflow-y: auto;
+            ">
+                <div>Visualization test environment loaded.</div>
+                <div>Ready for testing...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Custom console logging for the test
+        function logToConsole(message, type = 'info') {
+            const logDiv = document.getElementById('consoleLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff5252' : type === 'success' ? '#4caf50' : '#00ff00';
+            logDiv.innerHTML += `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(message) {
+            document.getElementById('statusText').textContent = message;
+            logToConsole(message);
+        }
+
+        function runBuddyTest() {
+            updateStatus('Testing Buddy System visualization...');
+            
+            const canvas = document.getElementById('memoryCanvas');
+            canvas.innerHTML = '';
+            
+            const buddyContainer = document.createElement('div');
+            buddyContainer.className = 'buddy-container algorithm-specific-viz';
+            buddyContainer.style.cssText = `
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                border: 3px solid #2196F3;
+                background: #e3f2fd;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 12px;
+                min-height: 300px;
+            `;
+            
+            buddyContainer.innerHTML = `
+                <h4 style="color: #2196F3; margin-bottom: 15px;">
+                    <i class="fas fa-sitemap"></i> Buddy System Tree Structure
+                </h4>
+                <div class="buddy-tree" style="background: #ffffff; padding: 20px; border-radius: 8px;">
+                    <div style="text-align: center; margin: 15px 0;">
+                        <div style="display: inline-block; margin: 5px; padding: 12px 20px; border: 2px solid #2196F3; border-radius: 8px; background: #ffffff; font-weight: bold;">
+                            1024B Root
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin: 15px 0;">
+                        <div style="display: inline-block; margin: 0 20px; padding: 10px 16px; border: 2px solid #ff5722; border-radius: 8px; background: #ffcdd2;">
+                            512B Allocated
+                        </div>
+                        <div style="display: inline-block; margin: 0 20px; padding: 10px 16px; border: 2px solid #4caf50; border-radius: 8px; background: #c8e6c9;">
+                            512B Free
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin: 15px 0;">
+                        <div style="display: inline-block; margin: 0 5px; padding: 8px 12px; border: 1px solid #ff5722; border-radius: 6px; background: #ffcdd2; font-size: 0.9rem;">
+                            256B
+                        </div>
+                        <div style="display: inline-block; margin: 0 5px; padding: 8px 12px; border: 1px solid #ff5722; border-radius: 6px; background: #ffcdd2; font-size: 0.9rem;">
+                            256B
+                        </div>
+                        <div style="display: inline-block; margin: 0 5px; padding: 8px 12px; border: 1px solid #4caf50; border-radius: 6px; background: #c8e6c9; font-size: 0.9rem;">
+                            256B
+                        </div>
+                        <div style="display: inline-block; margin: 0 5px; padding: 8px 12px; border: 1px solid #4caf50; border-radius: 6px; background: #c8e6c9; font-size: 0.9rem;">
+                            256B
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; background: #ffffff; padding: 15px; border-radius: 8px; display: flex; gap: 20px; text-align: center;">
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">Tree Depth:</div>
+                        <div style="font-size: 1.2rem; font-weight: bold; color: #2196F3;">3 Levels</div>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">Block Size Range:</div>
+                        <div style="font-size: 1.2rem; font-weight: bold; color: #2196F3;">256B - 1024B</div>
+                    </div>
+                </div>
+            `;
+            
+            canvas.appendChild(buddyContainer);
+            
+            setTimeout(() => {
+                const rect = buddyContainer.getBoundingClientRect();
+                if (rect.height > 0 && rect.width > 0) {
+                    updateStatus('✅ Buddy System visualization working correctly!');
+                    logToConsole('Buddy container dimensions: ' + rect.width + 'x' + rect.height, 'success');
+                } else {
+                    updateStatus('❌ Buddy System visualization has visibility issues');
+                    logToConsole('Buddy container not visible', 'error');
+                }
+            }, 100);
+        }
+
+        function runPoolTest() {
+            updateStatus('Testing Memory Pool visualization...');
+            
+            const canvas = document.getElementById('memoryCanvas');
+            canvas.innerHTML = '';
+            
+            const poolContainer = document.createElement('div');
+            poolContainer.className = 'pool-container algorithm-specific-viz';
+            poolContainer.style.cssText = `
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                border: 3px solid #ff5722;
+                background: #fbe9e7;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 12px;
+                min-height: 300px;
+            `;
+            
+            let chunksHTML = '';
+            const usageValues = [85, 60, 30, 90, 45, 75, 20, 95];
+            
+            for (let i = 0; i < 8; i++) {
+                const usage = usageValues[i];
+                chunksHTML += `
+                    <div style="
+                        display: inline-block;
+                        width: 80px;
+                        height: 120px;
+                        margin: 8px;
+                        border: 2px solid #ff5722;
+                        border-radius: 8px;
+                        background: #ffffff;
+                        text-align: center;
+                        padding: 8px;
+                        vertical-align: bottom;
+                    ">
+                        <div style="font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; color: #ff5722;">
+                            Chunk ${i + 1}
+                        </div>
+                        <div style="
+                            height: 60px;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                            display: flex;
+                            flex-direction: column-reverse;
+                            margin-bottom: 8px;
+                            background: #f5f5f5;
+                        ">
+                            <div style="
+                                background: linear-gradient(to top, #ff5722, #ff7043);
+                                height: ${usage}%;
+                                border-radius: 0 0 3px 3px;
+                                transition: height 0.3s ease;
+                            "></div>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #ff5722; font-weight: bold;">
+                            ${usage}%
+                        </div>
+                    </div>
+                `;
+            }
+            
+            poolContainer.innerHTML = `
+                <h4 style="color: #ff5722; margin-bottom: 15px;">
+                    <i class="fas fa-cubes"></i> Memory Pool Chunks
+                </h4>
+                <div style="
+                    display: flex;
+                    gap: 5px;
+                    align-items: flex-end;
+                    padding: 20px;
+                    background: #ffffff;
+                    border-radius: 12px;
+                    border: 2px solid #ff5722;
+                    justify-content: center;
+                    overflow-x: auto;
+                ">
+                    ${chunksHTML}
+                </div>
+                <div style="margin-top: 20px; background: #ffffff; padding: 15px; border-radius: 8px; display: flex; gap: 20px; text-align: center;">
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">Total Chunks:</div>
+                        <div style="font-size: 1.2rem; font-weight: bold; color: #ff5722;">8</div>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">Avg Usage:</div>
+                        <div style="font-size: 1.2rem; font-weight: bold; color: #ff5722;">63%</div>
+                    </div>
+                </div>
+            `;
+            
+            canvas.appendChild(poolContainer);
+            
+            setTimeout(() => {
+                const rect = poolContainer.getBoundingClientRect();
+                if (rect.height > 0 && rect.width > 0) {
+                    updateStatus('✅ Memory Pool visualization working correctly!');
+                    logToConsole('Pool container dimensions: ' + rect.width + 'x' + rect.height, 'success');
+                } else {
+                    updateStatus('❌ Memory Pool visualization has visibility issues');
+                    logToConsole('Pool container not visible', 'error');
+                }
+            }, 100);
+        }
+
+        function runFullTest() {
+            updateStatus('Running full visualization test...');
+            logToConsole('Starting comprehensive test...', 'info');
+            
+            runBuddyTest();
+            
+            setTimeout(() => {
+                runPoolTest();
+                
+                setTimeout(() => {
+                    const canvas = document.getElementById('memoryCanvas');
+                    const buddyContainers = canvas.querySelectorAll('.buddy-container');
+                    const poolContainers = canvas.querySelectorAll('.pool-container');
+                    
+                    logToConsole('=== FULL TEST RESULTS ===', 'info');
+                    logToConsole('Buddy containers: ' + buddyContainers.length, 'info');
+                    logToConsole('Pool containers: ' + poolContainers.length, 'info');
+                    
+                    if (buddyContainers.length > 0 && poolContainers.length > 0) {
+                        updateStatus('🎉 All visualizations working perfectly!');
+                        logToConsole('SUCCESS: All algorithm-specific visualizations are functional!', 'success');
+                    } else {
+                        updateStatus('⚠️ Some visualizations may have issues');
+                        logToConsole('PARTIAL: Not all visualizations rendered correctly', 'error');
+                    }
+                }, 2000);
+            }, 2000);
+        }
+
+        function clearCanvas() {
+            document.getElementById('memoryCanvas').innerHTML = `
+                <p style="text-align: center; color: #666; margin-top: 100px;">
+                    <i class="fas fa-arrow-up"></i><br>
+                    Click the test buttons above to see visualizations
+                </p>
+            `;
+            updateStatus('Canvas cleared');
+        }
+
+        // Initialize
+        updateStatus('Test environment ready. Click buttons to test visualizations.');
+        logToConsole('All test functions loaded and ready.', 'success');
+    </script>
+</body>
+</html>

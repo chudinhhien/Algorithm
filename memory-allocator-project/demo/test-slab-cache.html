@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slab Cache Objects Test</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+        .test-description {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        .test-button {
+            background: #9c27b0;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        .test-button:hover {
+            background: #7b1fa2;
+            transform: translateY(-2px);
+        }
+        .test-results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">
+            <i class="fas fa-database"></i> Slab Cache Objects Test
+        </h1>
+        
+        <div class="test-description">
+            <p><strong>Test Purpose:</strong> Verify that Slab Cache Objects visualization displays correctly with proper CSS styling.</p>
+            <p><strong>Expected Result:</strong> Multiple slab caches with purple theme, progress bars, and allocated/free objects.</p>
+        </div>
+
+        <div class="test-controls">
+            <button class="test-button" onclick="runSlabTest()">
+                <i class="fas fa-play"></i> Run Slab Test
+            </button>
+            <button class="test-button" onclick="runSlabWithData()">
+                <i class="fas fa-cogs"></i> Test with Custom Data
+            </button>
+            <button class="test-button" onclick="clearTest()">
+                <i class="fas fa-trash"></i> Clear Test
+            </button>
+        </div>
+
+        <div class="test-results" id="testResults">
+            <p><i class="fas fa-info-circle"></i> Click "Run Slab Test" to start testing...</p>
+        </div>
+    </div>
+
+    <script src="js/allocator-demo.js"></script>
+    <script>
+        function runSlabTest() {
+            console.log('Running Slab Cache Test...');
+            
+            // Create a dummy allocator instance
+            const testAllocator = new MemoryAllocator(4096, 'slab');
+            
+            // Test the slab visualization
+            const slabContainer = testAllocator.createSlabVisualization({
+                caches: [
+                    { objectSize: 16, slabSize: 4096, objectsPerSlab: 256, allocatedSlabs: 2 },
+                    { objectSize: 32, slabSize: 4096, objectsPerSlab: 128, allocatedSlabs: 1 },
+                    { objectSize: 64, slabSize: 4096, objectsPerSlab: 64, allocatedSlabs: 3 },
+                    { objectSize: 128, slabSize: 4096, objectsPerSlab: 32, allocatedSlabs: 1 }
+                ]
+            });
+            
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '<h3><i class="fas fa-check-circle" style="color: #4CAF50;"></i> Slab Cache Visualization Test Results</h3>';
+            resultsDiv.appendChild(slabContainer);
+            
+            console.log('Slab test completed successfully!');
+        }
+
+        function runSlabWithData() {
+            console.log('Running Slab Cache Test with custom data...');
+            
+            // Create a dummy allocator instance
+            const testAllocator = new MemoryAllocator(8192, 'slab');
+            
+            // Test with more diverse data
+            const slabContainer = testAllocator.createSlabVisualization({
+                caches: [
+                    { objectSize: 8, slabSize: 4096, objectsPerSlab: 512, allocatedSlabs: 4 },
+                    { objectSize: 24, slabSize: 4096, objectsPerSlab: 170, allocatedSlabs: 2 },
+                    { objectSize: 48, slabSize: 4096, objectsPerSlab: 85, allocatedSlabs: 3 },
+                    { objectSize: 96, slabSize: 4096, objectsPerSlab: 42, allocatedSlabs: 1 },
+                    { objectSize: 192, slabSize: 4096, objectsPerSlab: 21, allocatedSlabs: 2 },
+                    { objectSize: 512, slabSize: 4096, objectsPerSlab: 8, allocatedSlabs: 1 }
+                ]
+            });
+            
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '<h3><i class="fas fa-flask" style="color: #FF9800;"></i> Custom Slab Cache Data Test</h3>';
+            resultsDiv.appendChild(slabContainer);
+            
+            console.log('Custom slab test completed successfully!');
+        }
+
+        function clearTest() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '<p><i class="fas fa-info-circle"></i> Test cleared. Click a test button to run tests...</p>';
+            console.log('Test results cleared.');
+        }
+
+        // Auto-run test on page load
+        window.addEventListener('load', function() {
+            setTimeout(runSlabTest, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slab Memory Allocator - Giải Thích Chi Tiết</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f2f5;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #9c27b0; text-align: center; }
+        h2 { color: #9c27b0; border-bottom: 2px solid #9c27b0; padding-bottom: 10px; }
+        .highlight { background: #f3e5f5; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .code { background: #2d3748; color: white; padding: 15px; border-radius: 8px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ Slab Memory Allocator - Giải Thích Chi Tiết</h1>
+        
+        <h2>1. Khái Niệm Cơ Bản</h2>
+        <div class="highlight">
+            <h3>🧱 Slab là gì?</h3>
+            <p><strong>Slab</strong> là một khối memory liên tục (thường 4KB) được chia thành nhiều <strong>objects</strong> cùng kích thước.</p>
+            <p><strong>Ví dụ:</strong> Slab 4KB = 256 objects × 16 bytes mỗi object</p>
+        </div>
+        
+        <div class="highlight">
+            <h3>📦 Cache là gì?</h3>
+            <p><strong>Cache</strong> là tập hợp các slabs chứa objects cùng kích thước. Mỗi cache quản lý một size riêng.</p>
+            <p><strong>Ví dụ:</strong> Cache 64B bao gồm nhiều slabs, mỗi slab chứa objects 64 bytes</p>
+        </div>
+
+        <h2>2. Cấu Trúc trong Demo</h2>
+        <p>Demo sử dụng 5 cache sizes tiêu chuẩn:</p>
+        <ul>
+            <li><strong>16B Cache:</strong> 256 objects/slab - dành cho allocations nhỏ</li>
+            <li><strong>32B Cache:</strong> 128 objects/slab - dành cho allocations nhỏ-vừa</li>
+            <li><strong>64B Cache:</strong> 64 objects/slab - dành cho allocations vừa</li>
+            <li><strong>128B Cache:</strong> 32 objects/slab - dành cho allocations lớn</li>
+            <li><strong>256B Cache:</strong> 16 objects/slab - dành cho allocations rất lớn</li>
+        </ul>
+
+        <h2>3. Quy Trình Allocation</h2>
+        <div class="highlight">
+            <h3>Bước 1: Nhận Request</h3>
+            <p>User yêu cầu allocate X bytes (ví dụ: 50 bytes)</p>
+        </div>
+        
+        <div class="highlight">
+            <h3>Bước 2: Chọn Cache</h3>
+            <p>Tìm cache nhỏ nhất có thể chứa được request size</p>
+            <p><strong>Ví dụ:</strong> 50 bytes → chọn Cache 64B (cache nhỏ nhất ≥ 50)</p>
+        </div>
+        
+        <div class="highlight">
+            <h3>Bước 3: Lấy Object</h3>
+            <p>Lấy object đầu tiên từ free list của cache đã chọn</p>
+            <p>Đánh dấu object là "allocated"</p>
+        </div>
+        
+        <div class="highlight">
+            <h3>Bước 4: Mở Rộng (nếu cần)</h3>
+            <p>Nếu cache hết free objects, tạo slab mới và chia thành objects</p>
+        </div>
+
+        <h2>4. Code Implementation Concept</h2>
+        <div class="code">
+// Tìm cache phù hợp
+function findBestFitCache(size) {
+    return caches.find(cache => cache.objectSize >= size);
+}
+
+// Allocate object
+function allocate(size) {
+    const cache = findBestFitCache(size);
+    
+    // Tạo slab mới nếu cần
+    if (cache.freeObjects === 0) {
+        cache.allocatedSlabs++;
+        cache.freeObjects += cache.objectsPerSlab;
+    }
+    
+    // Lấy object
+    cache.freeObjects--;
+    cache.allocatedObjects++;
+    
+    return { size: size, actualSize: cache.objectSize };
+}
+        </div>
+
+        <h2>5. Performance Metrics</h2>
+        <div class="highlight">
+            <h3>📈 Cache Efficiency</h3>
+            <p><strong>Công thức:</strong> (Actual Used / Total Allocated) × 100%</p>
+            <p><strong>Ý nghĩa:</strong> Tỷ lệ memory được sử dụng hiệu quả</p>
+            <p><strong>Ví dụ:</strong> Request 50B trong cache 64B → efficiency = 50/64 = 78%</p>
+        </div>
+        
+        <div class="highlight">
+            <h3>⚖️ Memory Overhead</h3>
+            <p><strong>Công thức:</strong> (Slab Headers / Total Memory) × 100%</p>
+            <p><strong>Ý nghĩa:</strong> Tỷ lệ memory dành cho quản lý</p>
+            <p><strong>Ví dụ:</strong> 10 slabs × 64B header / (10 × 4096B) = 1.56%</p>
+        </div>
+
+        <h2>6. Ưu Điểm</h2>
+        <ul>
+            <li>✅ <strong>Tốc độ cao:</strong> Allocation/deallocation O(1) - không cần tìm kiếm</li>
+            <li>✅ <strong>Giảm fragmentation:</strong> Objects cùng size được nhóm lại</li>
+            <li>✅ <strong>Cache locality:</strong> Objects gần nhau trong memory → tăng hiệu suất CPU cache</li>
+            <li>✅ <strong>Object reuse:</strong> Objects được tái sử dụng, không cần khởi tạo lại</li>
+        </ul>
+
+        <h2>7. Nhược Điểm</h2>
+        <ul>
+            <li>❌ <strong>Internal fragmentation:</strong> Lãng phí space khi request size < cache size</li>
+            <li>❌ <strong>Memory overhead:</strong> Cần memory cho slab headers và management structures</li>
+            <li>❌ <strong>Complexity:</strong> Implementation phức tạp hơn simple allocators</li>
+            <li>❌ <strong>Fixed sizes:</strong> Không linh hoạt với sizes bất thường</li>
+        </ul>
+
+        <h2>8. So Sánh với Algorithms Khác</h2>
+        <table border="1" style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr style="background: #9c27b0; color: white;">
+                <th style="padding: 10px;">Aspect</th>
+                <th style="padding: 10px;">Slab</th>
+                <th style="padding: 10px;">Buddy System</th>
+                <th style="padding: 10px;">Memory Pool</th>
+            </tr>
+            <tr>
+                <td style="padding: 8px;"><strong>Speed</strong></td>
+                <td style="padding: 8px;">⭐⭐⭐⭐⭐ O(1)</td>
+                <td style="padding: 8px;">⭐⭐⭐⭐ O(log n)</td>
+                <td style="padding: 8px;">⭐⭐⭐⭐⭐ O(1)</td>
+            </tr>
+            <tr style="background: #f8f9fa;">
+                <td style="padding: 8px;"><strong>Fragmentation</strong></td>
+                <td style="padding: 8px;">⭐⭐⭐⭐ Low external</td>
+                <td style="padding: 8px;">⭐⭐⭐ Medium</td>
+                <td style="padding: 8px;">⭐⭐⭐⭐⭐ Minimal</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;"><strong>Flexibility</strong></td>
+                <td style="padding: 8px;">⭐⭐ Fixed sizes only</td>
+                <td style="padding: 8px;">⭐⭐⭐⭐⭐ Any power of 2</td>
+                <td style="padding: 8px;">⭐⭐ Fixed sizes only</td>
+            </tr>
+        </table>
+
+        <div style="text-align: center; margin: 30px 0; padding: 20px; background: #e8f5e8; border-radius: 10px;">
+            <h2 style="color: #2e7d32;">🎯 Sẵn sàng thử nghiệm?</h2>
+            <p style="font-size: 1.1rem;">Bây giờ bạn đã hiểu cách Slab Allocator hoạt động!</p>
+            <a href="index.html" style="display: inline-block; background: #9c27b0; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold;">
+                🚀 Mở Demo Chính
+            </a>
+            <p style="margin-top: 10px; color: #666;">Chọn "Slab Allocator" để xem visualization đã được cải thiện</p>
+        </div>
+    </div>
+</body>
+</html> 

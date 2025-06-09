@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Allocator Algorithm Test</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .algorithm-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .algorithm-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .algorithm-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .algorithm-btn.buddy { background: #2196F3; color: white; }
+        .algorithm-btn.slab { background: #9c27b0; color: white; }
+        .algorithm-btn.pool { background: #ff5722; color: white; }
+        .algorithm-btn.hybrid { background: #673ab7; color: white; }
+        
+        .test-visualization {
+            min-height: 400px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .test-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            background: #4caf50;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .test-btn:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+        
+        .test-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-vials"></i> Memory Allocator Algorithm Tester</h1>
+            <p class="subtitle">Test và so sánh các thuật toán Memory Allocation</p>
+        </div>
+        
+        <div class="test-container">
+            <h2>Chọn thuật toán để test:</h2>
+            <div class="algorithm-selector">
+                <button class="algorithm-btn buddy" onclick="testAlgorithm('buddy')">
+                    <i class="fas fa-sitemap"></i> Buddy System
+                </button>
+                <button class="algorithm-btn slab" onclick="testAlgorithm('slab')">
+                    <i class="fas fa-database"></i> Slab Allocator
+                </button>
+                <button class="algorithm-btn pool" onclick="testAlgorithm('pool')">
+                    <i class="fas fa-cubes"></i> Memory Pool
+                </button>
+                <button class="algorithm-btn hybrid" onclick="testAlgorithm('hybrid')">
+                    <i class="fas fa-brain"></i> Hybrid Allocator
+                </button>
+            </div>
+            
+            <div class="test-controls">
+                <button class="test-btn" onclick="simulateAllocations()">
+                    <i class="fas fa-plus"></i> Simulate Allocations
+                </button>
+                <button class="test-btn" onclick="simulateDeallocations()">
+                    <i class="fas fa-minus"></i> Simulate Deallocations
+                </button>
+                <button class="test-btn" onclick="simulateRandomPattern()">
+                    <i class="fas fa-random"></i> Random Pattern
+                </button>
+                <button class="test-btn" onclick="resetTest()">
+                    <i class="fas fa-refresh"></i> Reset
+                </button>
+            </div>
+            
+            <div class="test-info" id="testInfo">
+                Click một algorithm button để bắt đầu test...
+            </div>
+            
+            <div class="test-visualization" id="testVisualization">
+                <!-- Visualization sẽ được render ở đây -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AlgorithmTester {
+            constructor() {
+                this.currentAlgorithm = null;
+                this.demo = null;
+                this.testData = {
+                    allocations: [],
+                    totalSize: 1024
+                };
+            }
+            
+            async initializeAlgorithm(algorithm) {
+                this.currentAlgorithm = algorithm;
+                
+                // Simulate demo initialization
+                this.demo = {
+                    allocatorType: algorithm,
+                    memorySize: 1024,
+                    allocations: [],
+                    stats: {
+                        totalAllocated: 0,
+                        totalFree: 1024,
+                        fragmentationRatio: 0,
+                        allocCount: 0,
+                        avgAllocTime: 0,
+                        peakUsage: 0
+                    }
+                };
+                
+                this.updateTestInfo(`Khởi tạo ${algorithm.toUpperCase()} allocator với 1024 bytes`);
+                this.renderVisualization();
+            }
+            
+            renderVisualization() {
+                const container = document.getElementById('testVisualization');
+                container.innerHTML = '';
+                
+                if (!this.demo) {
+                    container.innerHTML = '<p>Chưa khởi tạo algorithm</p>';
+                    return;
+                }
+                
+                // Create visualization container
+                const vizContainer = document.createElement('div');
+                vizContainer.className = `visualization-container ${this.currentAlgorithm}-visualization`;
+                
+                // Add header
+                const header = document.createElement('div');
+                header.className = 'visualization-header';
+                header.innerHTML = `
+                    <h3><i class="fas fa-microchip"></i> ${this.getAlgorithmTitle()}</h3>
+                    <div class="memory-info">
+                        <span>Total: 1024 bytes</span>
+                        <span>Allocated: ${this.demo.stats.totalAllocated} bytes</span>
+                        <span>Free: ${this.demo.stats.totalFree} bytes</span>
+                    </div>
+                `;
+                vizContainer.appendChild(header);
+                
+                // Add algorithm-specific visualization
+                const vizContent = this.createAlgorithmVisualization();
+                vizContainer.appendChild(vizContent);
+                
+                container.appendChild(vizContainer);
+            }
+            
+            createAlgorithmVisualization() {
+                const content = document.createElement('div');
+                content.style.padding = '20px';
+                
+                switch(this.currentAlgorithm) {
+                    case 'buddy':
+                        return this.createBuddyVisualization();
+                    case 'slab':
+                        return this.createSlabVisualization();
+                    case 'pool':
+                        return this.createPoolVisualization();
+                    case 'hybrid':
+                        return this.createHybridVisualization();
+                    default:
+                        content.innerHTML = '<p>Unknown algorithm</p>';
+                        return content;
+                }
+            }
+            
+            createBuddyVisualization() {
+                const container = document.createElement('div');
+                container.className = 'buddy-container';
+                
+                container.innerHTML = `
+                    <div class="buddy-tree-section">
+                        <h4><i class="fas fa-sitemap"></i> Binary Tree Structure</h4>
+                        <div class="buddy-tree" id="testBuddyTree">
+                            ${this.generateBuddyTree()}
+                        </div>
+                    </div>
+                    <div class="buddy-memory-section">
+                        <h4><i class="fas fa-layer-group"></i> Linear Memory Layout</h4>
+                        <div class="buddy-memory" id="testBuddyMemory">
+                            ${this.generateBuddyMemory()}
+                        </div>
+                    </div>
+                `;
+                
+                return container;
+            }
+            
+            createSlabVisualization() {
+                const container = document.createElement('div');
+                container.className = 'slab-container';
+                
+                container.innerHTML = `
+                    <div class="slab-cache-section">
+                        <h4><i class="fas fa-database"></i> Object Caches</h4>
+                        <div class="slab-caches">
+                            ${this.generateSlabCaches()}
+                        </div>
+                    </div>
+                `;
+                
+                return container;
+            }
+            
+            createPoolVisualization() {
+                const container = document.createElement('div');
+                container.className = 'pool-container';
+                
+                container.innerHTML = `
+                    <div class="pool-chunk-section">
+                        <h4><i class="fas fa-cubes"></i> Memory Chunks</h4>
+                        <div class="pool-chunks">
+                            ${this.generatePoolChunks()}
+                        </div>
+                    </div>
+                `;
+                
+                return container;
+            }
+            
+            createHybridVisualization() {
+                const container = document.createElement('div');
+                container.className = 'hybrid-container';
+                
+                container.innerHTML = `
+                    <div class="hybrid-strategy-section">
+                        <h4><i class="fas fa-brain"></i> Algorithm Strategy</h4>
+                        <div class="hybrid-strategies">
+                            ${this.generateHybridStrategies()}
+                        </div>
+                    </div>
+                `;
+                
+                return container;
+            }
+            
+            generateBuddyTree() {
+                let html = '';
+                for (let level = 0; level <= 3; level++) {
+                    const nodeSize = 1024 / Math.pow(2, level);
+                    const nodeCount = Math.pow(2, level);
+                    
+                    html += `<div class="buddy-level buddy-level-${level}">`;
+                    for (let i = 0; i < nodeCount; i++) {
+                        const status = Math.random() > 0.7 ? 'allocated' : 'free';
+                        html += `
+                            <div class="buddy-node buddy-node-${status}">
+                                <div class="buddy-node-size">${this.formatBytes(nodeSize)}</div>
+                                <div class="buddy-node-range">Block ${i}</div>
+                            </div>
+                        `;
+                    }
+                    html += '</div>';
+                }
+                return html;
+            }
+            
+            generateBuddyMemory() {
+                const blocks = [
+                    { size: 256, type: 'free' },
+                    { size: 128, type: 'allocated' },
+                    { size: 256, type: 'allocated' },
+                    { size: 384, type: 'free' }
+                ];
+                
+                return blocks.map(block => {
+                    const width = (block.size / 1024) * 100;
+                    return `
+                        <div class="buddy-memory-block buddy-memory-${block.type}" 
+                             style="width: ${width}%">
+                            <span>${this.formatBytes(block.size)}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            generateSlabCaches() {
+                const sizes = [16, 32, 64, 128, 256];
+                return sizes.map(size => {
+                    const allocated = Math.floor(Math.random() * 8);
+                    const total = 8;
+                    const usage = (allocated / total) * 100;
+                    
+                    return `
+                        <div class="slab-cache">
+                            <div class="slab-cache-header">
+                                <span class="slab-cache-size">${size}B Objects</span>
+                                <span class="slab-cache-usage">${allocated}/${total}</span>
+                            </div>
+                            <div class="slab-cache-bar">
+                                <div class="slab-cache-used" style="width: ${usage}%"></div>
+                            </div>
+                            <div class="slab-objects">
+                                ${Array.from({length: total}, (_, i) => 
+                                    `<div class="slab-object slab-object-${i < allocated ? 'allocated' : 'free'}"></div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            generatePoolChunks() {
+                return Array.from({length: 8}, (_, i) => {
+                    const usage = Math.random() * 100;
+                    return `
+                        <div class="pool-chunk">
+                            <div class="pool-chunk-header">Chunk ${i + 1}</div>
+                            <div class="pool-chunk-bar">
+                                <div class="pool-chunk-used" style="height: ${usage}%"></div>
+                            </div>
+                            <div class="pool-chunk-info">${Math.floor(usage)}%</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            generateHybridStrategies() {
+                const strategies = ['buddy', 'slab', 'pool'];
+                return strategies.map(strategy => {
+                    const usage = Math.random() * 100;
+                    const isActive = strategy === 'slab'; // Simulate current strategy
+                    
+                    return `
+                        <div class="hybrid-strategy ${isActive ? 'hybrid-strategy-active' : ''}">
+                            <div class="hybrid-strategy-icon">
+                                <i class="fas ${this.getStrategyIcon(strategy)}"></i>
+                            </div>
+                            <div class="hybrid-strategy-name">${strategy.toUpperCase()}</div>
+                            <div class="hybrid-strategy-usage">${Math.floor(usage)}%</div>
+                            <div class="hybrid-strategy-bar">
+                                <div class="hybrid-strategy-fill" style="width: ${usage}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            getAlgorithmTitle() {
+                const titles = {
+                    buddy: 'Buddy System Allocator',
+                    slab: 'Slab Allocator',
+                    pool: 'Memory Pool Allocator',
+                    hybrid: 'Hybrid Allocator'
+                };
+                return titles[this.currentAlgorithm] || 'Unknown Algorithm';
+            }
+            
+            getStrategyIcon(strategy) {
+                const icons = {
+                    buddy: 'fa-sitemap',
+                    slab: 'fa-database',
+                    pool: 'fa-cubes'
+                };
+                return icons[strategy] || 'fa-microchip';
+            }
+            
+            formatBytes(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            }
+            
+            updateTestInfo(message) {
+                document.getElementById('testInfo').textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            }
+            
+            simulateAllocations() {
+                if (!this.demo) return;
+                
+                const size = Math.floor(Math.random() * 256) + 32;
+                this.demo.stats.totalAllocated += size;
+                this.demo.stats.totalFree -= size;
+                this.demo.stats.allocCount++;
+                
+                this.updateTestInfo(`Allocated ${size} bytes. Total allocated: ${this.demo.stats.totalAllocated}`);
+                this.renderVisualization();
+            }
+            
+            simulateDeallocations() {
+                if (!this.demo || this.demo.stats.totalAllocated === 0) return;
+                
+                const size = Math.min(Math.floor(Math.random() * 128) + 32, this.demo.stats.totalAllocated);
+                this.demo.stats.totalAllocated -= size;
+                this.demo.stats.totalFree += size;
+                
+                this.updateTestInfo(`Deallocated ${size} bytes. Total allocated: ${this.demo.stats.totalAllocated}`);
+                this.renderVisualization();
+            }
+            
+            simulateRandomPattern() {
+                if (!this.demo) return;
+                
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        if (Math.random() > 0.5) {
+                            this.simulateAllocations();
+                        } else {
+                            this.simulateDeallocations();
+                        }
+                    }, i * 500);
+                }
+            }
+            
+            reset() {
+                if (this.demo) {
+                    this.demo.stats = {
+                        totalAllocated: 0,
+                        totalFree: 1024,
+                        fragmentationRatio: 0,
+                        allocCount: 0,
+                        avgAllocTime: 0,
+                        peakUsage: 0
+                    };
+                    this.updateTestInfo('Reset algorithm state');
+                    this.renderVisualization();
+                }
+            }
+        }
+        
+        // Global instance
+        const tester = new AlgorithmTester();
+        
+        // Global functions
+        function testAlgorithm(algorithm) {
+            tester.initializeAlgorithm(algorithm);
+        }
+        
+        function simulateAllocations() {
+            tester.simulateAllocations();
+        }
+        
+        function simulateDeallocations() {
+            tester.simulateDeallocations();
+        }
+        
+        function simulateRandomPattern() {
+            tester.simulateRandomPattern();
+        }
+        
+        function resetTest() {
+            tester.reset();
+        }
+    </script>
+</body>
+</html>

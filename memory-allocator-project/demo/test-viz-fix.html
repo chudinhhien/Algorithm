@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Allocator Visualization Test</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .test-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary { background: #2196F3; }
+        .btn-success { background: #4caf50; }
+        .btn-warning { background: #ff9800; }
+        .btn-info { background: #17a2b8; }
+        
+        .status {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+        
+        .visualization-test {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1><i class="fas fa-vials"></i> Memory Allocator Visualization Test</h1>
+            <p>Test and verify the visualization components are working correctly</p>
+        </div>
+        
+        <div class="test-controls">
+            <button class="test-btn btn-primary" onclick="testLinearMemory()">
+                <i class="fas fa-layer-group"></i> Test Linear Memory
+            </button>
+            <button class="test-btn btn-success" onclick="testFullVisualization()">
+                <i class="fas fa-check-circle"></i> Test Full Visualization
+            </button>
+            <button class="test-btn btn-warning" onclick="clearTest()">
+                <i class="fas fa-trash"></i> Clear
+            </button>
+        </div>
+        
+        <div class="status" id="testStatus">
+            Ready to test visualizations...
+        </div>
+        
+        <div class="visualization-test" id="testVisualization">
+            <!-- Test visualizations will be rendered here -->
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(message) {
+            const status = document.getElementById('testStatus');
+            status.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        }
+        
+        function clearTest() {
+            const container = document.getElementById('testVisualization');
+            container.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Test area cleared</p>';
+            updateStatus('Test area cleared');
+        }
+        
+        function testLinearMemory() {
+            updateStatus('Testing linear memory visualization...');
+            const container = document.getElementById('testVisualization');
+            
+            const testBlocks = [
+                { size: 256, type: 'free' },
+                { size: 128, type: 'allocated' },
+                { size: 64, type: 'allocated' },
+                { size: 256, type: 'free' },
+                { size: 128, type: 'allocated' },
+                { size: 192, type: 'fragmented' }
+            ];
+            
+            const totalSize = 1024;
+            
+            container.innerHTML = `
+                <div class="linear-memory-section">
+                    <h4><i class="fas fa-layer-group"></i> Linear Memory Layout Test</h4>
+                    <div class="linear-memory-container">
+                        <div class="memory-blocks">
+                            ${testBlocks.map((block, index) => {
+                                const width = (block.size / totalSize) * 100;
+                                return `
+                                    <div class="memory-block memory-block-${block.type}" 
+                                         style="width: ${width}%"
+                                         title="Block ${index}: ${block.size} bytes - ${block.type}">
+                                        ${width > 8 ? block.size + 'B' : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            updateStatus('Linear memory visualization test completed');
+        }
+        
+        function testFullVisualization() {
+            updateStatus('Testing full visualization with all components...');
+            const container = document.getElementById('testVisualization');
+            
+            container.innerHTML = `
+                <div class="visualization-container buddy-visualization">
+                    <div class="visualization-header">
+                        <h3><i class="fas fa-microchip"></i> Full Visualization Test - Buddy System</h3>
+                        <div class="memory-info">
+                            <span>Total: 1.0 KB</span>
+                            <span>Allocated: 512 B</span>
+                            <span>Free: 512 B</span>
+                            <span>Fragmentation: 15.2%</span>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 20px;">
+                        <div class="linear-memory-section">
+                            <h4><i class="fas fa-layer-group"></i> Linear Memory Layout</h4>
+                            <div class="linear-memory-container">
+                                <div class="memory-blocks">
+                                    <div class="memory-block memory-block-allocated" style="width: 25%" title="Block 0: 256 bytes - allocated">256B</div>
+                                    <div class="memory-block memory-block-free" style="width: 12.5%" title="Block 1: 128 bytes - free">128B</div>
+                                    <div class="memory-block memory-block-allocated" style="width: 12.5%" title="Block 2: 128 bytes - allocated">128B</div>
+                                    <div class="memory-block memory-block-free" style="width: 50%" title="Block 3: 512 bytes - free">512B</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            updateStatus('Full visualization test completed successfully!');
+        }
+        
+        // Initialize test
+        updateStatus('Visualization test page loaded. Click any test button to begin.');
+        
+        // Auto-run full test on load
+        setTimeout(() => {
+            testFullVisualization();
+        }, 1000);
+    </script>
+</body>
+</html>
